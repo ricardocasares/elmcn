@@ -269,9 +269,9 @@ toHtml attrs (Select config) =
                 |> List.filter (\(Item i) -> Just i.value == config.value)
                 |> List.head
 
-        -- The item focused and scrolled to when the list opens: the selected one, or
-        -- the first that can be.
-        target =
+        -- The item focused when the list opens: the selected one, or the first that
+        -- can be.
+        focused =
             case selected of
                 Just (Item i) ->
                     Just i.value
@@ -282,9 +282,6 @@ toHtml attrs (Select config) =
                         |> List.filter (\(Item i) -> not i.disabled)
                         |> List.head
                         |> Maybe.map (\(Item i) -> i.value)
-
-        scrollTarget =
-            Maybe.map2 Tuple.pair target (offsetOf target config.sections)
     in
     Html.span
         [ attribute "data-slot" "select", class "contents" ]
@@ -339,13 +336,21 @@ toHtml attrs (Select config) =
             -- Picking an item hides the popover and changes the placement in the same
             -- frame, so the placement waits until the exit transition is over, or the
             -- list would jump while fading out.
-            , class "[transition:opacity_100ms,scale_100ms,display_100ms_allow-discrete,overlay_100ms_allow-discrete,top_0s_100ms_allow-discrete,bottom_0s_100ms_allow-discrete,height_0s_100ms_allow-discrete,max-height_0s_100ms_allow-discrete,min-height_0s_100ms_allow-discrete,margin_0s_100ms_allow-discrete,position-area_0s_100ms_allow-discrete,position-try-fallbacks_0s_100ms_allow-discrete]"
+            , class "[transition:opacity_100ms,scale_100ms,display_100ms_allow-discrete,overlay_100ms_allow-discrete,top_0s_100ms_allow-discrete,bottom_0s_100ms_allow-discrete,height_0s_100ms_allow-discrete,max-height_0s_100ms_allow-discrete,min-height_0s_100ms_allow-discrete,margin_0s_100ms_allow-discrete,position-area_0s_100ms_allow-discrete,position-try-fallbacks_0s_100ms_allow-discrete,scroll-snap-type_0s_var(--snap-delay)_allow-discrete]"
+
+            -- A popover keeps its scroll offset while closed, and the placement expects
+            -- the list scrolled to the top. Snapping to the first section while closed
+            -- scrolls it back there. The snap only takes effect while the list is laid
+            -- out, so it is turned on at the end of the exit transition, once the list
+            -- is all but invisible, and off as soon as it opens, before the focused
+            -- item is scrolled into view.
+            , class "snap-y snap-mandatory [--snap-delay:90ms] open:snap-none open:[--snap-delay:0s]"
 
             -- The blur is on the popover itself rather than a `::before`, which would
             -- scroll away with the content.
             , class "bg-popover/70 backdrop-blur-2xl backdrop-saturate-150"
             ]
-            (List.map (viewSection popoverId config.onSelect config.value scrollTarget) config.sections)
+            (List.indexedMap (viewSection popoverId config.onSelect config.value focused) config.sections)
         ]
 
 
@@ -359,15 +364,26 @@ sectionItems section =
             []
 
 
-viewSection : String -> Maybe (a -> msg) -> Maybe a -> Maybe ( a, Length ) -> Section a msg -> Html msg
-viewSection popoverId handler current scrollTarget section =
+viewSection : String -> Maybe (a -> msg) -> Maybe a -> Maybe a -> Int -> Section a msg -> Html msg
+viewSection popoverId handler current focused index section =
+    let
+        -- The snap point the list scrolls back to while closed.
+        scrollReset =
+            if index == 0 then
+                [ class "snap-start" ]
+
+            else
+                []
+    in
     case section of
         Group label list ->
             Html.div
-                [ attribute "data-slot" "select-group"
-                , attribute "role" "group"
-                , class "scroll-my-1 p-1"
-                ]
+                ([ attribute "data-slot" "select-group"
+                 , attribute "role" "group"
+                 , class "scroll-my-1 p-1"
+                 ]
+                    ++ scrollReset
+                )
                 ((case label of
                     Just string ->
                         [ Html.div
@@ -380,37 +396,25 @@ viewSection popoverId handler current scrollTarget section =
                     Nothing ->
                         []
                  )
-                    ++ List.map (viewItem popoverId handler current scrollTarget) list
+                    ++ List.map (viewItem popoverId handler current focused) list
                 )
 
         Separator ->
             Html.div
-                [ attribute "data-slot" "select-separator"
-                , attribute "role" "separator"
-                , class "pointer-events-none my-1 h-px bg-border"
-                ]
+                ([ attribute "data-slot" "select-separator"
+                 , attribute "role" "separator"
+                 , class "pointer-events-none my-1 h-px bg-border"
+                 ]
+                    ++ scrollReset
+                )
                 []
 
 
-viewItem : String -> Maybe (a -> msg) -> Maybe a -> Maybe ( a, Length ) -> Item a msg -> Html msg
-viewItem popoverId handler current scrollTarget (Item config) =
+viewItem : String -> Maybe (a -> msg) -> Maybe a -> Maybe a -> Item a msg -> Html msg
+viewItem popoverId handler current focused (Item config) =
     let
         isSelected =
             Just config.value == current
-
-        isTarget =
-            Maybe.map Tuple.first scrollTarget == Just config.value
-
-        -- A popover keeps its scroll offset while closed. `scroll-initial-target` scrolls
-        -- back to this item on every open, and the margin puts it where the offset math
-        -- expects it: at the top of the list, scrolled by nothing.
-        scrollReset =
-            case ( isTarget, scrollTarget ) of
-                ( True, Just ( _, offset ) ) ->
-                    [ attribute "style" ("scroll-margin-top: " ++ css offset ++ "; scroll-initial-target: nearest") ]
-
-                _ ->
-                    []
     in
     Html.button
         ([ type_ "button"
@@ -420,9 +424,8 @@ viewItem popoverId handler current scrollTarget (Item config) =
          , attribute "popovertarget" popoverId
          , attribute "popovertargetaction" "hide"
          , Html.Attributes.disabled config.disabled
-         , autofocus isTarget
+         , autofocus (focused == Just config.value)
          ]
-            ++ scrollReset
             ++ [ class "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 ps-1.5 pe-8 text-start text-sm outline-hidden select-none hover:bg-foreground/10 focus:bg-foreground/10 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
                ]
             ++ (case handler of
