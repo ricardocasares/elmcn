@@ -163,7 +163,7 @@ viewTrack : Html msg
 viewTrack =
     Html.div
         [ attribute "data-slot" "progress-track"
-        , class "relative flex h-1.5 w-full items-center overflow-x-hidden rounded-full bg-muted"
+        , class "relative flex h-1 w-full items-center overflow-x-hidden rounded-full bg-muted"
         ]
         [ Html.div
             [ attribute "data-slot" "progress-indicator"
