@@ -1,31 +1,29 @@
 module UI.Spinner exposing (view)
 
-{-| An indicator that shows a loading state.
+{-| An indicator that shows a loading state. It is plain CSS, a ring with one transparent edge that spins.
 
     Spinner.view []
 
-The spinner is an SVG, so size it with `Svg.Attributes.class`:
+Size it with a `size-*` class and recolor it with a `text-*` class:
 
-    Spinner.view [ Svg.Attributes.class "size-8" ]
+    Spinner.view [ class "size-8 text-muted-foreground" ]
 
 @docs view
 
 -}
 
-import Html.Attributes exposing (attribute)
-import Svg exposing (Attribute, Svg)
-import Svg.Attributes
-import UI.Icon as Icon
+import Html exposing (Attribute, Html)
+import Html.Attributes exposing (attribute, class)
 
 
 {-| -}
-view : List (Attribute msg) -> Svg msg
+view : List (Attribute msg) -> Html msg
 view attrs =
-    Icon.loader
+    Html.span
         ([ attribute "role" "status"
          , attribute "aria-label" "Loading"
-         , attribute "aria-hidden" "false"
-         , Svg.Attributes.class "size-4 animate-spin"
+         , class "inline-block size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
          ]
             ++ attrs
         )
+        []

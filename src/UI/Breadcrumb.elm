@@ -18,8 +18,6 @@ module UI.Breadcrumb exposing (view, list, item, link, page, separator, ellipsis
 
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (attribute, class)
-import Svg.Attributes
-import UI.Icon as Icon
 
 
 {-| Renders a `<nav>`.
@@ -78,12 +76,12 @@ separator attrs children =
         ([ attribute "data-slot" "breadcrumb-separator"
          , attribute "role" "presentation"
          , attribute "aria-hidden" "true"
-         , class "[&>svg]:size-3.5"
+         , class "flex items-center"
          ]
             ++ attrs
         )
         (if List.isEmpty children then
-            [ Icon.chevronRight [] ]
+            [ Html.span [ class "size-1.5 rotate-45 border-t-[1.5px] border-r-[1.5px] border-current rtl:-rotate-135" ] [] ]
 
          else
             children
@@ -98,10 +96,12 @@ ellipsis attrs =
         ([ attribute "data-slot" "breadcrumb-ellipsis"
          , attribute "role" "presentation"
          , attribute "aria-hidden" "true"
-         , class "flex size-5 items-center justify-center [&>svg]:size-4"
+         , class "flex size-5 items-center justify-center gap-0.5"
          ]
             ++ attrs
         )
-        [ Icon.ellipsis [ Svg.Attributes.class "size-4" ]
+        [ Html.span [ class "size-1 rounded-full bg-current" ] []
+        , Html.span [ class "size-1 rounded-full bg-current" ] []
+        , Html.span [ class "size-1 rounded-full bg-current" ] []
         , Html.span [ class "sr-only" ] [ Html.text "More" ]
         ]

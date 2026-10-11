@@ -42,43 +42,34 @@ Button.view "Save"
    npx shadcn@latest add ricardocasares/elmcn/button ricardocasares/elmcn/card
    ```
 
-3. Some components draw icons and need `elm/svg`; the CLI says so when you add them:
-
-   ```sh
-   elm install elm/svg
-   ```
-
 To pin a version, add a tag: `ricardocasares/elmcn/button#v0.1.0`. Pins apply only to
 the item you name, not to the items it depends on.
 
 ## Components
 
-| Item | Module | Needs `elm/svg` |
-| --- | --- | --- |
-| `alert` | `UI.Alert` | |
-| `aspect-ratio` | `UI.AspectRatio` | |
-| `avatar` | `UI.Avatar` | |
-| `badge` | `UI.Badge` | |
-| `breadcrumb` | `UI.Breadcrumb` | ✓ |
-| `button` | `UI.Button` | |
-| `card` | `UI.Card` | |
-| `checkbox` | `UI.Checkbox` | ✓ |
-| `empty` | `UI.Empty` | |
-| `input` | `UI.Input` | |
-| `kbd` | `UI.Kbd` | |
-| `label` | `UI.Label` | |
-| `native-select` | `UI.NativeSelect` | ✓ |
-| `progress` | `UI.Progress` | |
-| `radio-group` | `UI.RadioGroup` | |
-| `separator` | `UI.Separator` | |
-| `skeleton` | `UI.Skeleton` | |
-| `spinner` | `UI.Spinner` | ✓ |
-| `switch` | `UI.Switch` | |
-| `table` | `UI.Table` | |
-| `textarea` | `UI.Textarea` | |
-
-`icon` (`UI.Icon`) holds the few Lucide icons these components use. It is installed
-automatically when needed.
+| Item | Module |
+| --- | --- |
+| `alert` | `UI.Alert` |
+| `aspect-ratio` | `UI.AspectRatio` |
+| `avatar` | `UI.Avatar` |
+| `badge` | `UI.Badge` |
+| `breadcrumb` | `UI.Breadcrumb` |
+| `button` | `UI.Button` |
+| `card` | `UI.Card` |
+| `checkbox` | `UI.Checkbox` |
+| `empty` | `UI.Empty` |
+| `input` | `UI.Input` |
+| `kbd` | `UI.Kbd` |
+| `label` | `UI.Label` |
+| `native-select` | `UI.NativeSelect` |
+| `progress` | `UI.Progress` |
+| `radio-group` | `UI.RadioGroup` |
+| `separator` | `UI.Separator` |
+| `skeleton` | `UI.Skeleton` |
+| `spinner` | `UI.Spinner` |
+| `switch` | `UI.Switch` |
+| `table` | `UI.Table` |
+| `textarea` | `UI.Textarea` |
 
 None of the components need ports or their own `Model`/`update`. Checkbox, Switch,
 Radio Group and Native Select are styled native inputs, so `checked`, `onCheck`,
@@ -144,8 +135,9 @@ component:
 Skeleton.view [ class "size-12 rounded-full!" ]
 ```
 
-**Icons are SVG.** Style `UI.Icon` and `UI.Spinner` with `Svg.Attributes.class`. The
-`class` from `Html.Attributes` does nothing on SVG elements.
+**No icons included.** The checkbox tick, select chevron, breadcrumb separators and spinner
+are plain CSS, so elmcn needs only `elm/html`. Bring your own icon library for `Button.startIcon`
+and friends.
 
 **Dark mode.** Add the `dark` class to `<html>` or any ancestor.
 
@@ -172,4 +164,4 @@ you add a component:
 ## License
 
 MIT. The component styles are adapted from [shadcn/ui](https://github.com/shadcn-ui/ui)
-(MIT) and the icons are from [Lucide](https://lucide.dev) (ISC).
+(MIT).

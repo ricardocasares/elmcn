@@ -23,8 +23,6 @@ module UI.NativeSelect exposing
 
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (attribute, class)
-import Svg.Attributes
-import UI.Icon as Icon
 
 
 {-| The attributes go on the `<select>`.
@@ -49,10 +47,12 @@ view options attrs children =
                 ++ attrs
             )
             children
-        , Icon.chevronDown
+        , Html.span
             [ attribute "data-slot" "native-select-icon"
-            , Svg.Attributes.class "pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-muted-foreground select-none"
+            , attribute "aria-hidden" "true"
+            , class "pointer-events-none absolute top-1/2 right-3.5 size-2 -translate-y-[75%] rotate-45 border-r-[1.5px] border-b-[1.5px] border-muted-foreground select-none"
             ]
+            []
         ]
 
 

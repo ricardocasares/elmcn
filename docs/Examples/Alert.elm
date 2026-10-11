@@ -2,16 +2,16 @@ module Examples.Alert exposing (..)
 
 import Html exposing (Html, div, p, text)
 import Html.Attributes exposing (class)
+import Phosphor exposing (IconWeight(..))
 import UI.Alert as Alert
 import UI.Button as Button
-import UI.Icon as Icon
 
 
 demo : Html msg
 demo =
     Alert.view []
         [ class "max-w-md" ]
-        [ Icon.check []
+        [ Phosphor.check Regular |> Phosphor.toHtml []
         , Alert.title [] [ text "Success! Your changes have been saved" ]
         , Alert.description [] [ text "This is an alert with icon, title and description." ]
         ]

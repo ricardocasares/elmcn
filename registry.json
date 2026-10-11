@@ -18,26 +18,6 @@
       ]
     },
     {
-      "name": "icon",
-      "type": "registry:item",
-      "title": "Icon",
-      "description": "The Lucide icons used by elmcn components.",
-      "meta": {
-        "elmDependencies": [
-          "elm/html",
-          "elm/svg"
-        ]
-      },
-      "docs": "This component needs elm/svg. If it isn't installed yet, run: elm install elm/svg",
-      "files": [
-        {
-          "path": "src/UI/Icon.elm",
-          "type": "registry:file",
-          "target": "~/src/UI/Icon.elm"
-        }
-      ]
-    },
-    {
       "name": "alert",
       "type": "registry:item",
       "title": "Alert",
@@ -114,16 +94,11 @@
       "type": "registry:item",
       "title": "Breadcrumb",
       "description": "Displays the path to the current resource using a hierarchy of links.",
-      "registryDependencies": [
-        "ricardocasares/elmcn/icon"
-      ],
       "meta": {
         "elmDependencies": [
-          "elm/html",
-          "elm/svg"
+          "elm/html"
         ]
       },
-      "docs": "This component needs elm/svg. If it isn't installed yet, run: elm install elm/svg",
       "files": [
         {
           "path": "src/UI/Breadcrumb.elm",
@@ -173,16 +148,11 @@
       "type": "registry:item",
       "title": "Checkbox",
       "description": "A control that allows the user to toggle between checked and not checked.",
-      "registryDependencies": [
-        "ricardocasares/elmcn/icon"
-      ],
       "meta": {
         "elmDependencies": [
-          "elm/html",
-          "elm/svg"
+          "elm/html"
         ]
       },
-      "docs": "This component needs elm/svg. If it isn't installed yet, run: elm install elm/svg",
       "files": [
         {
           "path": "src/UI/Checkbox.elm",
@@ -268,16 +238,11 @@
       "type": "registry:item",
       "title": "Native Select",
       "description": "A styled native HTML select element.",
-      "registryDependencies": [
-        "ricardocasares/elmcn/icon"
-      ],
       "meta": {
         "elmDependencies": [
-          "elm/html",
-          "elm/svg"
+          "elm/html"
         ]
       },
-      "docs": "This component needs elm/svg. If it isn't installed yet, run: elm install elm/svg",
       "files": [
         {
           "path": "src/UI/NativeSelect.elm",
@@ -363,16 +328,11 @@
       "type": "registry:item",
       "title": "Spinner",
       "description": "An indicator that can be used to show a loading state.",
-      "registryDependencies": [
-        "ricardocasares/elmcn/icon"
-      ],
       "meta": {
         "elmDependencies": [
-          "elm/html",
-          "elm/svg"
+          "elm/html"
         ]
       },
-      "docs": "This component needs elm/svg. If it isn't installed yet, run: elm install elm/svg",
       "files": [
         {
           "path": "src/UI/Spinner.elm",

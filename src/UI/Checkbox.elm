@@ -15,8 +15,6 @@ It is a native `<input type="checkbox">`, so it works in forms and with `onCheck
 
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (attribute, class, type_)
-import Svg.Attributes
-import UI.Icon as Icon
 
 
 {-| The attributes go on the `<input>`.
@@ -32,8 +30,9 @@ view attrs =
                 ++ attrs
             )
             []
-        , Icon.check
+        , Html.span
             [ attribute "data-slot" "checkbox-indicator"
-            , Svg.Attributes.class "pointer-events-none invisible size-3.5 text-primary-foreground peer-checked:visible"
+            , class "pointer-events-none invisible mb-0.5 h-2.5 w-1.5 rotate-45 border-r-2 border-b-2 border-primary-foreground peer-checked:visible"
             ]
+            []
         ]

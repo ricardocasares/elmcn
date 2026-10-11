@@ -2,8 +2,8 @@ module Examples.Badge exposing (..)
 
 import Html exposing (Html, a, div, text)
 import Html.Attributes exposing (class, href)
+import Phosphor exposing (IconWeight(..))
 import UI.Badge as Badge
-import UI.Icon as Icon
 
 
 demo : Html msg
@@ -23,7 +23,7 @@ variants =
 
 withIcon : Html msg
 withIcon =
-    Badge.view [ Badge.secondary ] [] [ Icon.check [], text "Verified" ]
+    Badge.view [ Badge.secondary ] [] [ Phosphor.check Regular |> Phosphor.toHtml [], text "Verified" ]
 
 
 {-| Use `attributes` to style a link as a badge; links also get a hover state.
