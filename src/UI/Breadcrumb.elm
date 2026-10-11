@@ -35,7 +35,7 @@ list : List (Attribute msg) -> List (Html msg) -> Html msg
 list attrs children =
     Html.ol
         (attribute "data-slot" "breadcrumb-list"
-            :: class "flex flex-wrap items-center gap-1.5 text-sm break-words text-muted-foreground sm:gap-2.5"
+            :: class "flex flex-wrap items-center gap-1.5 text-sm wrap-break-word text-muted-foreground"
             :: attrs
         )
         children
@@ -44,7 +44,7 @@ list attrs children =
 {-| -}
 item : List (Attribute msg) -> List (Html msg) -> Html msg
 item attrs children =
-    Html.li (attribute "data-slot" "breadcrumb-item" :: class "inline-flex items-center gap-1.5" :: attrs) children
+    Html.li (attribute "data-slot" "breadcrumb-item" :: class "inline-flex items-center gap-1" :: attrs) children
 
 
 {-| Renders an `<a>`.
@@ -98,7 +98,7 @@ ellipsis attrs =
         ([ attribute "data-slot" "breadcrumb-ellipsis"
          , attribute "role" "presentation"
          , attribute "aria-hidden" "true"
-         , class "flex size-9 items-center justify-center"
+         , class "flex size-5 items-center justify-center [&>svg]:size-4"
          ]
             ++ attrs
         )

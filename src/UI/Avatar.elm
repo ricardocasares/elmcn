@@ -49,7 +49,7 @@ view options attrs children =
     Html.span
         ([ attribute "data-slot" "avatar"
          , attribute "data-size" (sizeName size)
-         , class "group/avatar relative flex size-8 shrink-0 overflow-hidden rounded-full select-none data-[size=lg]:size-10 data-[size=sm]:size-6"
+         , class "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 dark:after:mix-blend-lighten"
          ]
             ++ attrs
         )
@@ -60,7 +60,7 @@ view options attrs children =
 -}
 image : List (Attribute msg) -> Html msg
 image attrs =
-    Html.img (attribute "data-slot" "avatar-image" :: class "absolute inset-0 aspect-square size-full" :: attrs) []
+    Html.img (attribute "data-slot" "avatar-image" :: class "absolute inset-0 aspect-square size-full rounded-full object-cover" :: attrs) []
 
 
 {-| Shown while the image loads, or when there is no image.
@@ -81,7 +81,7 @@ badge : List (Attribute msg) -> List (Html msg) -> Html msg
 badge attrs children =
     Html.span
         ([ attribute "data-slot" "avatar-badge"
-         , class "absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-background select-none"
+         , class "absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground bg-blend-color ring-2 ring-background select-none"
          , class "group-data-[size=sm]/avatar:size-2 group-data-[size=sm]/avatar:[&>svg]:hidden"
          , class "group-data-[size=default]/avatar:size-2.5 group-data-[size=default]/avatar:[&>svg]:size-2"
          , class "group-data-[size=lg]/avatar:size-3 group-data-[size=lg]/avatar:[&>svg]:size-2"

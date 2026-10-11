@@ -41,7 +41,7 @@ view options attrs =
             ([ type_ "checkbox"
              , attribute "role" "switch"
              , attribute "data-slot" "switch"
-             , class "peer inline-flex shrink-0 appearance-none rounded-full border border-transparent bg-input shadow-xs transition-all outline-none checked:bg-primary focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/80 dark:checked:bg-primary"
+             , class "peer inline-flex shrink-0 appearance-none rounded-full border border-transparent bg-input transition-all outline-none checked:bg-primary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/80 dark:checked:bg-primary dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
              , class (trackClass size)
              ]
                 ++ attrs

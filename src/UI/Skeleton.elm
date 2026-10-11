@@ -15,4 +15,4 @@ import Html.Attributes exposing (attribute, class)
 {-| -}
 view : List (Attribute msg) -> Html msg
 view attrs =
-    Html.div (attribute "data-slot" "skeleton" :: class "animate-pulse rounded-md bg-accent" :: attrs) []
+    Html.div (attribute "data-slot" "skeleton" :: class "animate-pulse rounded-md bg-muted" :: attrs) []

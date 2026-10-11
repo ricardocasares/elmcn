@@ -278,7 +278,8 @@ badges =
 
 card : Html Msg
 card =
-    Card.view [ class "w-full max-w-sm" ]
+    Card.view []
+        [ class "w-full max-w-sm" ]
         [ Card.header []
             [ Card.title [] [ text "Login to your account" ]
             , Card.description [] [ text "Enter your email below to login to your account" ]

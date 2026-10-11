@@ -32,7 +32,7 @@ view : List (Attribute msg) -> List (Html msg) -> Html msg
 view attrs children =
     div
         (attribute "data-slot" "empty"
-            :: class "flex min-w-0 flex-1 flex-col items-center justify-center gap-6 rounded-lg border-dashed p-6 text-center text-balance md:p-12"
+            :: class "flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed p-6 text-center text-balance"
             :: attrs
         )
         children
@@ -42,7 +42,7 @@ view attrs children =
 -}
 header : List (Attribute msg) -> List (Html msg) -> Html msg
 header attrs children =
-    div (attribute "data-slot" "empty-header" :: class "flex max-w-sm flex-col items-center gap-2 text-center" :: attrs) children
+    div (attribute "data-slot" "empty-header" :: class "flex max-w-sm flex-col items-center gap-2" :: attrs) children
 
 
 {-| An image, avatar or icon above the title.
@@ -67,7 +67,7 @@ media options attrs children =
 {-| -}
 title : List (Attribute msg) -> List (Html msg) -> Html msg
 title attrs children =
-    div (attribute "data-slot" "empty-title" :: class "text-lg font-medium tracking-tight" :: attrs) children
+    div (attribute "data-slot" "empty-title" :: class "text-sm font-medium tracking-tight" :: attrs) children
 
 
 {-| -}
@@ -87,7 +87,7 @@ content : List (Attribute msg) -> List (Html msg) -> Html msg
 content attrs children =
     div
         (attribute "data-slot" "empty-content"
-            :: class "flex w-full max-w-sm min-w-0 flex-col items-center gap-4 text-sm text-balance"
+            :: class "flex w-full max-w-sm min-w-0 flex-col items-center gap-2.5 text-sm text-balance"
             :: attrs
         )
         children
@@ -128,4 +128,4 @@ variantClass variant =
             "bg-transparent"
 
         Icon ->
-            "flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-6"
+            "flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-4"

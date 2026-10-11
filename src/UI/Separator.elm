@@ -36,7 +36,7 @@ view options attrs =
         ([ attribute "data-slot" "separator"
          , attribute "role" "none"
          , attribute "data-orientation" (orientationName orientation)
-         , class "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px"
+         , class "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px data-[orientation=vertical]:self-stretch"
          ]
             ++ attrs
         )

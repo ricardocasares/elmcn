@@ -26,7 +26,7 @@ view value attrs =
          , attribute "aria-valuemin" "0"
          , attribute "aria-valuemax" "100"
          , attribute "aria-valuenow" (String.fromFloat percentage)
-         , class "relative h-2 w-full overflow-hidden rounded-full bg-primary/20"
+         , class "relative flex h-1 w-full items-center overflow-hidden rounded-full bg-muted"
          ]
             ++ attrs
         )
