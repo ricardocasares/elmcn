@@ -330,7 +330,10 @@ toHtml attrs (Select config) =
             , attribute "style" ("position-anchor: " ++ anchor ++ "; " ++ placement config selected)
             , class "fixed isolate z-50 m-0 inset-auto w-[anchor-size(width)] max-h-[calc(100%-0.5rem)] overflow-x-hidden overflow-y-auto rounded-lg border-0 p-0 text-popover-foreground shadow-md ring-1 ring-foreground/10"
             , class "origin-top scale-95 opacity-0 transition-[opacity,scale,display,overlay] transition-discrete duration-100 ease-out open:scale-100 open:opacity-100 starting:open:scale-95 starting:open:opacity-0"
-            , class "bg-popover/70 before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:backdrop-blur-2xl before:backdrop-saturate-150"
+
+            -- The blur is on the popover itself rather than a `::before`, which would
+            -- scroll away with the content.
+            , class "bg-popover/70 backdrop-blur-2xl backdrop-saturate-150"
             ]
             (List.map (viewSection popoverId config.onSelect config.value scrollTarget) config.sections)
         ]
