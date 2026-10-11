@@ -9,7 +9,7 @@
 // Usage: bun scripts/install-test.ts [item ...]
 
 import { $ } from "bun";
-import { mkdirSync, mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -45,6 +45,22 @@ const project: ElmJson = await Bun.file("elm.json").json();
 const versions = { ...project.dependencies.direct, ...project.dependencies.indirect };
 const pick = (names: string[]): Record<string, string> => Object.fromEntries(names.map((name) => [name, versions[name]]));
 
+// elm occasionally dies after a successful compile while it updates elm-stuff/d.dat
+// ("resource busy (file is locked)" then "thread blocked indefinitely in an MVar
+// operation"). It is a race inside the compiler, so retry it rather than fail the item.
+const elmMake = async (file: string, cwd: string, attempts = 3): Promise<void> => {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await $`${bin("elm")} make ${file} --output=/dev/null`.cwd(cwd).quiet();
+      return;
+    } catch (error) {
+      const stderr = (error as { stderr?: Buffer }).stderr?.toString() ?? "";
+      if (attempt >= attempts || !stderr.includes("file is locked")) throw error;
+      rmSync(join(cwd, "elm-stuff"), { recursive: true, force: true });
+    }
+  }
+};
+
 const only = Bun.argv.slice(2);
 const items = registry.items.filter((item) => only.length === 0 || only.includes(item.name));
 let failures = 0;
@@ -72,7 +88,7 @@ for (const item of items) {
     for (const file of item.files) {
       const installed = join(app, file.target.replace("~/", ""));
       if (!(await Bun.file(installed).exists())) throw new Error(`${file.target} was not installed`);
-      if (installed.endsWith(".elm")) await $`${bin("elm")} make ${installed} --output=/dev/null`.cwd(app).quiet();
+      if (installed.endsWith(".elm")) await elmMake(installed, app);
     }
     console.log(`✔ ${item.name}`);
   } catch (error) {
