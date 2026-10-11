@@ -27,7 +27,7 @@ A select is built with `new`, given an `id` and an `onSelect` handler, filled wi
 
 The selected value lives in your model, and `onSelect` tells you when it changes. Values can be any type that supports `==`.
 
-The list is a native popover anchored to the trigger with CSS anchor positioning, so it opens, closes on Escape or a click outside, and stays inside the viewport with no JavaScript, ports or component state. It is as wide as the trigger. When something is selected, the list opens with that item over the trigger and focused, like a native select on macOS; otherwise it opens below the trigger, or above when it doesn't fit below. The `id` is required because the trigger and the popover find each other by it.
+The list is a native popover anchored to the trigger with CSS anchor positioning, so it opens, closes on Escape or a click outside, stays inside the viewport, and is navigated with the arrow keys (a `focusgroup`) with no JavaScript, ports or component state. It is as wide as the trigger. When something is selected, the list opens with that item over the trigger and focused, like a native select on macOS; otherwise it opens below the trigger, or above when it doesn't fit below. The `id` is required because the trigger and the popover find each other by it.
 
 @docs Select, Ready, NeedsId, NeedsHandler
 
@@ -269,7 +269,8 @@ toHtml attrs (Select config) =
                 |> List.filter (\(Item i) -> Just i.value == config.value)
                 |> List.head
 
-        -- The item the list scrolls to when it opens: the selected one, or the first.
+        -- The item focused and scrolled to when the list opens: the selected one, or
+        -- the first that can be.
         target =
             case selected of
                 Just (Item i) ->
@@ -278,6 +279,7 @@ toHtml attrs (Select config) =
                 Nothing ->
                     config.sections
                         |> List.concatMap sectionItems
+                        |> List.filter (\(Item i) -> not i.disabled)
                         |> List.head
                         |> Maybe.map (\(Item i) -> i.value)
 
@@ -326,10 +328,18 @@ toHtml attrs (Select config) =
             , attribute "popover" "auto"
             , attribute "role" "listbox"
             , attribute "aria-labelledby" config.id
+
+            -- Arrow keys move focus between the items, and the list is one Tab stop.
+            , attribute "focusgroup" "listbox block"
             , attribute "data-slot" "select-content"
             , attribute "style" ("position-anchor: " ++ anchor ++ "; " ++ placement config selected)
             , class "fixed isolate z-50 m-0 inset-auto w-[anchor-size(width)] max-h-[calc(100%-0.5rem)] overflow-x-hidden overflow-y-auto rounded-lg border-0 p-0 text-popover-foreground shadow-md ring-1 ring-foreground/10"
-            , class "origin-top scale-95 opacity-0 transition-[opacity,scale,display,overlay] transition-discrete duration-100 ease-out open:scale-100 open:opacity-100 starting:open:scale-95 starting:open:opacity-0"
+            , class "origin-top scale-95 opacity-0 ease-out open:scale-100 open:opacity-100 starting:open:scale-95 starting:open:opacity-0"
+
+            -- Picking an item hides the popover and changes the placement in the same
+            -- frame, so the placement waits until the exit transition is over, or the
+            -- list would jump while fading out.
+            , class "[transition:opacity_100ms,scale_100ms,display_100ms_allow-discrete,overlay_100ms_allow-discrete,top_0s_100ms_allow-discrete,bottom_0s_100ms_allow-discrete,height_0s_100ms_allow-discrete,max-height_0s_100ms_allow-discrete,min-height_0s_100ms_allow-discrete,margin_0s_100ms_allow-discrete,position-area_0s_100ms_allow-discrete,position-try-fallbacks_0s_100ms_allow-discrete]"
 
             -- The blur is on the popover itself rather than a `::before`, which would
             -- scroll away with the content.
@@ -388,19 +398,18 @@ viewItem popoverId handler current scrollTarget (Item config) =
         isSelected =
             Just config.value == current
 
+        isTarget =
+            Maybe.map Tuple.first scrollTarget == Just config.value
+
         -- A popover keeps its scroll offset while closed. `scroll-initial-target` scrolls
         -- back to this item on every open, and the margin puts it where the offset math
         -- expects it: at the top of the list, scrolled by nothing.
         scrollReset =
-            case scrollTarget of
-                Just ( v, offset ) ->
-                    if v == config.value then
-                        [ attribute "style" ("scroll-margin-top: " ++ css offset ++ "; scroll-initial-target: nearest") ]
+            case ( isTarget, scrollTarget ) of
+                ( True, Just ( _, offset ) ) ->
+                    [ attribute "style" ("scroll-margin-top: " ++ css offset ++ "; scroll-initial-target: nearest") ]
 
-                    else
-                        []
-
-                Nothing ->
+                _ ->
                     []
     in
     Html.button
@@ -411,7 +420,7 @@ viewItem popoverId handler current scrollTarget (Item config) =
          , attribute "popovertarget" popoverId
          , attribute "popovertargetaction" "hide"
          , Html.Attributes.disabled config.disabled
-         , autofocus isSelected
+         , autofocus isTarget
          ]
             ++ scrollReset
             ++ [ class "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 ps-1.5 pe-8 text-start text-sm outline-hidden select-none hover:bg-foreground/10 focus:bg-foreground/10 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
