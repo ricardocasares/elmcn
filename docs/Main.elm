@@ -246,12 +246,11 @@ viewHeader model =
         [ div [ class "mx-auto flex h-14 max-w-6xl items-center justify-between px-6" ]
             [ a [ href "#/", class "text-lg font-semibold tracking-tight" ] [ text "elmcn" ]
             , div [ class "flex items-center gap-2" ]
-                [ a
-                    (href "https://github.com/ricardocasares/elmcn"
-                        :: target "_blank"
-                        :: Button.toAttributes (Button.new |> Button.ghost |> Button.small)
-                    )
-                    [ text "GitHub" ]
+                [ Button.new
+                    |> Button.text "GitHub"
+                    |> Button.ghost
+                    |> Button.small
+                    |> Button.toAnchor [ href "https://github.com/ricardocasares/elmcn", target "_blank" ]
                 , viewThemeSwitcher model.theme
                 ]
             ]
@@ -418,7 +417,7 @@ viewNotFound : Html msg
 viewNotFound =
     div [ class "flex flex-col gap-4" ]
         [ pageHeader "Not found" "There is no page here."
-        , a (href "#/" :: Button.toAttributes (Button.new |> Button.outline)) [ text "Back to the introduction" ]
+        , Button.new |> Button.text "Back to the introduction" |> Button.outline |> Button.toAnchor [ href "#/" ]
         ]
 
 

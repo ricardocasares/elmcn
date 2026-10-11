@@ -184,19 +184,15 @@ spinner =
         ]
 
 
-{-| Use `toAttributes` to give another element the button styles.
+{-| `toAnchor` renders an `<a>` instead of a `<button>`.
 -}
 asLink : Html msg
 asLink =
-    a
-        (href "#"
-            :: Button.toAttributes
-                (Button.new
-                    |> Button.secondary
-                    |> Button.small
-                )
-        )
-        [ text "Login" ]
+    Button.new
+        |> Button.text "Login"
+        |> Button.secondary
+        |> Button.small
+        |> Button.toAnchor [ href "#" ]
 
 
 rtl : Html msg

@@ -94,11 +94,18 @@ Button.new |> Button.text "Delete" |> Button.destructive |> Button.large |> Butt
 and `toHtml` won't compile until `Button.label` gives that an accessible name. Variants, sizes,
 `startIcon` and `endIcon` are setters, and `toHtml` takes the attributes and renders the result.
 
+**Buttons as links.** `Button.toAnchor` renders an `<a>` with the same content and setters
+as `toHtml`, the equivalent of shadcn's `asChild` on an anchor:
+
+```elm
+Button.new |> Button.text "Login" |> Button.secondary |> Button.toAnchor [ href "/login" ]
+```
+
 **Styling other elements.** `Button.toAttributes` and `Badge.attributes` give you the
 styles without the element, the equivalent of shadcn's `buttonVariants`:
 
 ```elm
-a (href "/login" :: Button.toAttributes (Button.new |> Button.secondary |> Button.small)) [ text "Login" ]
+span (Button.toAttributes (Button.new |> Button.outline)) [ text "Not a button" ]
 ```
 
 **Buttons don't submit forms by default.** `Button.toHtml` renders `type="button"`, like

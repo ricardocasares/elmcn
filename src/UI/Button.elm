@@ -6,7 +6,7 @@ module UI.Button exposing
     , destructive, outline, secondary, ghost, link
     , extraSmall, small, large
     , rounded
-    , toHtml, toAttributes
+    , toHtml, toAnchor, toAttributes
     )
 
 {-| Displays a button or a component that looks like a button.
@@ -72,11 +72,20 @@ Icon-only buttons are square versions of the same sizes. When several sizes are 
 
 # Rendering
 
-@docs toHtml, toAttributes
+@docs toHtml, toAnchor, toAttributes
 
-Use `toAttributes` to make another element look like a button, for example a link. It accepts a button without content:
+A button that navigates is rendered as a link with `toAnchor`. It takes the same content and setters as `toHtml`:
 
-    a (href "/login" :: Button.toAttributes (Button.new |> Button.secondary |> Button.small)) [ text "Login" ]
+    Button.new
+        |> Button.text "Login"
+        |> Button.secondary
+        |> Button.toAnchor [ href "/login" ]
+
+Not to be confused with the [`link`](#link) variant, which makes a `<button>` look like a text link.
+
+For any other element, `toAttributes` gives the styles alone. It accepts a button without content:
+
+    span (Button.toAttributes (Button.new |> Button.outline)) [ text "Not a button" ]
 
 -}
 
@@ -210,9 +219,21 @@ label name (Button config) =
 {-| Renders a `<button type="button">` with the given attributes after the styles, so they can override them.
 -}
 toHtml : List (Attribute msg) -> Button shape Ready msg -> Html msg
-toHtml attrs ((Button config) as button) =
-    Html.button
-        (type_ "button" :: attribute "data-slot" "button" :: toAttributes button ++ ariaLabel config.content ++ attrs)
+toHtml attrs =
+    render Html.button (type_ "button" :: attrs)
+
+
+{-| Renders an `<a>` with the button styles and content. Pass `href` with the attributes.
+-}
+toAnchor : List (Attribute msg) -> Button shape Ready msg -> Html msg
+toAnchor =
+    render Html.a
+
+
+render : (List (Attribute msg) -> List (Html msg) -> Html msg) -> List (Attribute msg) -> Button shape Ready msg -> Html msg
+render element attrs ((Button config) as button) =
+    element
+        (attribute "data-slot" "button" :: toAttributes button ++ ariaLabel config.content ++ attrs)
         (children config.content)
 
 
@@ -248,7 +269,7 @@ iconSlot position child =
     Html.span [ attribute "data-icon" position, class "contents" ] [ child ]
 
 
-{-| The button styles, for elements other than `<button>`. Any button is accepted, including one without content.
+{-| The button styles alone, for elements other than `<button>` and `<a>`. Any button is accepted, including one without content.
 -}
 toAttributes : Button shape status msg -> List (Attribute msg)
 toAttributes (Button config) =
