@@ -4,7 +4,7 @@
   "description": "shadcn/ui components for Elm, distributed as a shadcn registry",
   "license": "MIT",
   "scripts": {
-    "build": "npm run docs:gen && npm run build:elm && npm run build:css && cp docs/index.html dist/",
+    "build": "npm run docs:gen && npm run build:elm && npm run build:css && cp docs/index.html dist/ && cp -r docs/fonts dist/",
     "build:elm": "elm make docs/Main.elm --optimize --output=dist/main.js",
     "build:css": "tailwindcss -i docs/app.css -o dist/app.css --minify",
     "docs:gen": "node scripts/gen-docs.mjs",

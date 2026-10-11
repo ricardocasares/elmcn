@@ -500,5 +500,5 @@ codeBlock extra children =
             , span [ class "hidden group-data-[copied]:inline" ] [ text "Copied" ]
             ]
         , pre [ class "overflow-x-auto p-4 pr-16 font-mono text-[13px] leading-relaxed" ]
-            [ code [] children ]
+            [ code [ class "[font-feature-settings:'ss01']" ] children ]
         ]

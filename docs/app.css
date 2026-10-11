@@ -2,3 +2,16 @@
 @import "../src/elmcn.css";
 
 @source "./";
+
+@font-face {
+  font-family: "Paper Mono";
+  src: url("fonts/PaperMono.woff2") format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-mono:
+    "Paper Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
