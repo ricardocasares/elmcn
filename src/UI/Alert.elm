@@ -24,7 +24,7 @@ Use `action` for a control pinned to the top-right corner:
     Alert.view []
         []
         [ Alert.title [] [ text "Update available" ]
-        , Alert.action [] [ Button.view [ Button.outline ] [] [ text "Update" ] ]
+        , Alert.action [] [ Button.view "Update" |> Button.outline |> Button.toHtml [] ]
         ]
 
 @docs view, title, description, action

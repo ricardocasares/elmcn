@@ -1,46 +1,67 @@
 module UI.Button exposing
-    ( view, attributes
-    , Option
+    ( Button, Text, Icon, Ready, NeedsLabel
+    , view, icon, label
+    , toHtml, toAttributes
+    , startIcon, endIcon
     , destructive, outline, secondary, ghost, link
-    , extraSmall, small, large, icon, iconExtraSmall, iconSmall, iconLarge
+    , extraSmall, small, large
     )
 
 {-| Displays a button or a component that looks like a button.
 
-    Button.view [] [ onClick Save ] [ text "Save" ]
+A button is built with a constructor, adjusted with setters, and rendered with `toHtml`:
 
-    Button.view [ Button.outline, Button.small ] [ onClick Cancel ] [ text "Cancel" ]
+    Button.view "Save"
+        |> Button.toHtml [ onClick Save ]
 
-The button has `type="button"`, so it doesn't submit forms unless you pass `type_ "submit"`.
+    Button.view "Cancel"
+        |> Button.outline
+        |> Button.small
+        |> Button.toHtml []
 
-Mark an icon next to the label with `data-icon` so the padding is adjusted for it:
+An icon-only button is built from an icon and must then be given an accessible label. `toHtml` won't accept it until it has one:
 
-    Button.view [ Button.outline ]
-        []
-        [ someIcon [ attribute "data-icon" "inline-start" ], text "New Branch" ]
+    Button.icon (Phosphor.cube Bold |> Phosphor.toHtml [])
+        |> Button.label "A cube"
+        |> Button.outline
+        |> Button.toHtml []
 
-Use `attributes` to make another element look like a button, for example a link:
+The button has `type="button"`, so it doesn't submit forms unless you pass `type_ "submit"` to `toHtml`.
 
-    a (href "/login" :: Button.attributes [ Button.secondary, Button.small ]) [ text "Login" ]
-
-@docs view, attributes
+@docs Button, Text, Icon, Ready, NeedsLabel
 
 
-# Options
+# Constructors
 
-@docs Option
+@docs view, icon, label
+
+
+# Rendering
+
+@docs toHtml, toAttributes
+
+Use `toAttributes` to make another element look like a button, for example a link:
+
+    a (href "/login" :: Button.toAttributes (Button.view "" |> Button.secondary |> Button.small)) [ text "Login" ]
+
+
+# Setters
+
+@docs startIcon, endIcon
 
 
 ## Variants
 
-The default variant is a solid primary button.
+The default variant is a solid primary button. When several variants are given, the last one wins.
 
 @docs destructive, outline, secondary, ghost, link
 
 
 ## Sizes
 
-@docs extraSmall, small, large, icon, iconExtraSmall, iconSmall, iconLarge
+Icon-only buttons are square versions of the same sizes. When several sizes are given, the last one wins.
+
+@docs extraSmall, small, large
 
 -}
 
@@ -48,36 +69,53 @@ import Html exposing (Attribute, Html)
 import Html.Attributes exposing (attribute, class, type_)
 
 
-{-| Renders a `<button type="button">`.
+{-| A button being built.
+
+`shape` is [`Text`](#Text) or [`Icon`](#Icon). `status` is [`Ready`](#Ready) once the button can be rendered, or [`NeedsLabel`](#NeedsLabel) while an icon button still lacks its label.
+
 -}
-view : List Option -> List (Attribute msg) -> List (Html msg) -> Html msg
-view options attrs children =
-    Html.button (type_ "button" :: attribute "data-slot" "button" :: attributes options ++ attrs) children
+type Button shape status msg
+    = Button
+        { variant : Variant
+        , size : Size
+        , content : Content msg
+        }
 
 
-{-| The button styles as attributes, for elements other than `<button>`.
+{-| A button with a text label, made with [`view`](#view).
 -}
-attributes : List Option -> List (Attribute msg)
-attributes options =
-    let
-        config =
-            List.foldl apply { variant = Default, size = Medium } options
-    in
-    [ class "group/button inline-flex shrink-0 items-center justify-center border bg-clip-padding font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-3 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0"
-    , class (variantClass config.variant)
-    , class (sizeClass config.size)
-    ]
+type Text
+    = Text
 
 
-
--- OPTIONS
-
-
-{-| A variant or size. When several of the same kind are given, the last one wins.
+{-| A square button with a single icon, made with [`icon`](#icon).
 -}
-type Option
-    = Variant Variant
-    | Size Size
+type Icon
+    = Icon
+
+
+{-| The button can be rendered.
+-}
+type Ready
+    = Ready
+
+
+{-| An icon button that still needs [`label`](#label) before it can be rendered.
+-}
+type NeedsLabel
+    = NeedsLabel
+
+
+type Content msg
+    = Words
+        { text : String
+        , start : Maybe (Html msg)
+        , end : Maybe (Html msg)
+        }
+    | Glyph
+        { name : String
+        , icon : Html msg
+        }
 
 
 type Variant
@@ -94,94 +132,183 @@ type Size
     | ExtraSmall
     | Small
     | Large
-    | Icon
-    | IconExtraSmall
-    | IconSmall
-    | IconLarge
+
+
+
+-- CONSTRUCTORS
+
+
+{-| A button with a text label.
+-}
+view : String -> Button Text Ready msg
+view text =
+    init (Words { text = text, start = Nothing, end = Nothing })
+
+
+{-| A square button with only an icon. Give it an accessible name with [`label`](#label).
+-}
+icon : Html msg -> Button Icon NeedsLabel msg
+icon child =
+    init (Glyph { name = "", icon = child })
+
+
+{-| The accessible name of an icon button, set as `aria-label`.
+-}
+label : String -> Button Icon NeedsLabel msg -> Button Icon Ready msg
+label name (Button config) =
+    case config.content of
+        Glyph glyph ->
+            Button { config | content = Glyph { glyph | name = name } }
+
+        Words _ ->
+            Button config
+
+
+init : Content msg -> Button shape status msg
+init content =
+    Button { variant = Default, size = Medium, content = content }
+
+
+
+-- RENDERING
+
+
+{-| Renders a `<button type="button">` with the given attributes after the styles, so they can override them.
+-}
+toHtml : List (Attribute msg) -> Button shape Ready msg -> Html msg
+toHtml attrs ((Button config) as button) =
+    Html.button
+        (type_ "button" :: attribute "data-slot" "button" :: toAttributes button ++ ariaLabel config.content ++ attrs)
+        (children config.content)
+
+
+ariaLabel : Content msg -> List (Attribute msg)
+ariaLabel content =
+    case content of
+        Words _ ->
+            []
+
+        Glyph { name } ->
+            [ attribute "aria-label" name ]
+
+
+children : Content msg -> List (Html msg)
+children content =
+    case content of
+        Words { text, start, end } ->
+            List.filterMap identity
+                [ Maybe.map (iconSlot "inline-start") start
+                , Just (Html.text text)
+                , Maybe.map (iconSlot "inline-end") end
+                ]
+
+        Glyph config ->
+            [ config.icon ]
+
+
+iconSlot : String -> Html msg -> Html msg
+iconSlot position child =
+    Html.span [ attribute "data-icon" position, class "contents" ] [ child ]
+
+
+{-| The button styles, for elements other than `<button>`.
+-}
+toAttributes : Button shape status msg -> List (Attribute msg)
+toAttributes (Button config) =
+    [ class "group/button inline-flex shrink-0 items-center justify-center border bg-clip-padding font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-3 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0"
+    , class (variantClass config.variant)
+    , class (sizeClass config.content config.size)
+    ]
+
+
+
+-- SETTERS
+
+
+{-| An icon before the label. The padding is adjusted for it.
+-}
+startIcon : Html msg -> Button Text status msg -> Button Text status msg
+startIcon child =
+    mapText (\words -> { words | start = Just child })
+
+
+{-| An icon after the label. The padding is adjusted for it.
+-}
+endIcon : Html msg -> Button Text status msg -> Button Text status msg
+endIcon child =
+    mapText (\words -> { words | end = Just child })
+
+
+mapText :
+    ({ text : String, start : Maybe (Html msg), end : Maybe (Html msg) } -> { text : String, start : Maybe (Html msg), end : Maybe (Html msg) })
+    -> Button Text status msg
+    -> Button Text status msg
+mapText f (Button config) =
+    case config.content of
+        Words words ->
+            Button { config | content = Words (f words) }
+
+        Glyph _ ->
+            Button config
+
+
+variant : Variant -> Button shape status msg -> Button shape status msg
+variant v (Button config) =
+    Button { config | variant = v }
+
+
+size : Size -> Button shape status msg -> Button shape status msg
+size s (Button config) =
+    Button { config | size = s }
 
 
 {-| -}
-destructive : Option
+destructive : Button shape status msg -> Button shape status msg
 destructive =
-    Variant Destructive
+    variant Destructive
 
 
 {-| -}
-outline : Option
+outline : Button shape status msg -> Button shape status msg
 outline =
-    Variant Outline
+    variant Outline
 
 
 {-| -}
-secondary : Option
+secondary : Button shape status msg -> Button shape status msg
 secondary =
-    Variant Secondary
+    variant Secondary
 
 
 {-| -}
-ghost : Option
+ghost : Button shape status msg -> Button shape status msg
 ghost =
-    Variant Ghost
+    variant Ghost
 
 
 {-| Looks like a text link.
 -}
-link : Option
+link : Button shape status msg -> Button shape status msg
 link =
-    Variant Link
+    variant Link
 
 
 {-| -}
-extraSmall : Option
+extraSmall : Button shape status msg -> Button shape status msg
 extraSmall =
-    Size ExtraSmall
+    size ExtraSmall
 
 
 {-| -}
-small : Option
+small : Button shape status msg -> Button shape status msg
 small =
-    Size Small
+    size Small
 
 
 {-| -}
-large : Option
+large : Button shape status msg -> Button shape status msg
 large =
-    Size Large
-
-
-{-| A square button for a single icon.
--}
-icon : Option
-icon =
-    Size Icon
-
-
-{-| -}
-iconExtraSmall : Option
-iconExtraSmall =
-    Size IconExtraSmall
-
-
-{-| -}
-iconSmall : Option
-iconSmall =
-    Size IconSmall
-
-
-{-| -}
-iconLarge : Option
-iconLarge =
-    Size IconLarge
-
-
-apply : Option -> { variant : Variant, size : Size } -> { variant : Variant, size : Size }
-apply option config =
-    case option of
-        Variant variant ->
-            { config | variant = variant }
-
-        Size size ->
-            { config | size = size }
+    size Large
 
 
 
@@ -191,8 +318,8 @@ apply option config =
 
 
 variantClass : Variant -> String
-variantClass variant =
-    case variant of
+variantClass v =
+    case v of
         Default ->
             "border-transparent bg-primary text-primary-foreground hover:bg-primary/80 focus-visible:border-ring focus-visible:ring-ring/50"
 
@@ -212,9 +339,19 @@ variantClass variant =
             "border-transparent text-primary underline-offset-4 hover:underline focus-visible:border-ring focus-visible:ring-ring/50"
 
 
-sizeClass : Size -> String
-sizeClass size =
-    case size of
+sizeClass : Content msg -> Size -> String
+sizeClass content size_ =
+    case content of
+        Words _ ->
+            labeledSizeClass size_
+
+        Glyph _ ->
+            iconSizeClass size_
+
+
+labeledSizeClass : Size -> String
+labeledSizeClass size_ =
+    case size_ of
         Medium ->
             "h-8 gap-1.5 rounded-lg px-2.5 text-sm has-data-[icon=inline-end]:pe-2 has-data-[icon=inline-start]:ps-2 [&_svg:not([class*='size-'])]:size-4"
 
@@ -227,14 +364,18 @@ sizeClass size =
         Large ->
             "h-9 gap-1.5 rounded-lg px-2.5 text-sm has-data-[icon=inline-end]:pe-2 has-data-[icon=inline-start]:ps-2 [&_svg:not([class*='size-'])]:size-4"
 
-        Icon ->
+
+iconSizeClass : Size -> String
+iconSizeClass size_ =
+    case size_ of
+        Medium ->
             "size-8 rounded-lg text-sm [&_svg:not([class*='size-'])]:size-4"
 
-        IconExtraSmall ->
+        ExtraSmall ->
             "size-6 rounded-[min(var(--radius-md),10px)] text-sm in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3"
 
-        IconSmall ->
+        Small ->
             "size-7 rounded-[min(var(--radius-md),12px)] text-sm in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-4"
 
-        IconLarge ->
+        Large ->
             "size-9 rounded-lg text-sm [&_svg:not([class*='size-'])]:size-4"

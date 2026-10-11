@@ -173,19 +173,19 @@ viewHeader model =
                 [ a
                     (href "https://github.com/ricardocasares/elmcn"
                         :: target "_blank"
-                        :: Button.attributes [ Button.ghost, Button.small ]
+                        :: Button.toAttributes (Button.view "" |> Button.ghost |> Button.small)
                     )
                     [ text "GitHub" ]
-                , Button.view [ Button.outline, Button.small ]
-                    [ onClick ThemeToggled, id "theme-toggle" ]
-                    [ text
-                        (if model.dark then
-                            "Light mode"
+                , Button.view
+                    (if model.dark then
+                        "Light mode"
 
-                         else
-                            "Dark mode"
-                        )
-                    ]
+                     else
+                        "Dark mode"
+                    )
+                    |> Button.outline
+                    |> Button.small
+                    |> Button.toHtml [ onClick ThemeToggled, id "theme-toggle" ]
                 ]
             ]
         ]
@@ -292,7 +292,7 @@ viewHome =
             ]
         , section "Conventions"
             [ prose [ text "Every component takes a List (Attribute msg) like elm/html, and attributes you pass come after the component's own, so they override them. Components with variants or sizes take a list of options first. An empty list gives the defaults, and the last option of a kind wins." ]
-            , elmBlock "Button.view [] [] [ text \"Default\" ]\nButton.view [ Button.destructive, Button.large ] [] [ text \"Delete\" ]"
+            , elmBlock "Button.view \"Default\" |> Button.toHtml []\nButton.view \"Delete\" |> Button.destructive |> Button.large |> Button.toHtml []"
             ]
         , section "Components"
             [ div [ class "grid gap-4 sm:grid-cols-2" ]
@@ -318,7 +318,7 @@ viewNotFound : Html msg
 viewNotFound =
     div [ class "flex flex-col gap-4" ]
         [ pageHeader "Not found" "There is no page here."
-        , a (href "#/" :: Button.attributes [ Button.outline ]) [ text "Back to the introduction" ]
+        , a (href "#/" :: Button.toAttributes (Button.view "" |> Button.outline)) [ text "Back to the introduction" ]
         ]
 
 
@@ -448,16 +448,15 @@ exampleBox model component example =
             Set.member key model.codeShown
 
         tab label active show =
-            Button.view
-                [ Button.small
-                , if active then
-                    Button.secondary
+            Button.view label
+                |> Button.small
+                |> (if active then
+                        Button.secondary
 
-                  else
-                    Button.ghost
-                ]
-                [ onClick (CodeToggled key show) ]
-                [ text label ]
+                    else
+                        Button.ghost
+                   )
+                |> Button.toHtml [ onClick (CodeToggled key show) ]
     in
     div [ class "overflow-hidden rounded-xl border" ]
         [ div [ class "flex gap-1 border-b p-2" ]

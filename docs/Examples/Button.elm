@@ -1,8 +1,8 @@
 module Examples.Button exposing (..)
 
 import Html exposing (Html, a, div, text)
-import Html.Attributes exposing (attribute, class, dir, disabled, href)
-import Icons
+import Html.Attributes exposing (class, dir, disabled, href)
+import Phosphor exposing (IconWeight(..))
 import Svg.Attributes
 import UI.Button as Button
 import UI.Spinner as Spinner
@@ -11,8 +11,8 @@ import UI.Spinner as Spinner
 demo : Html msg
 demo =
     div [ class "flex flex-wrap items-center gap-2 md:flex-row" ]
-        [ Button.view [ Button.outline ] [] [ text "Button" ]
-        , Button.view [ Button.outline, Button.icon ] [ attribute "aria-label" "Submit" ] [ Icons.arrowUp [] ]
+        [ Button.view "Button" |> Button.outline |> Button.toHtml []
+        , Button.icon (Phosphor.arrowUp Regular |> Phosphor.toHtml []) |> Button.label "Submit" |> Button.outline |> Button.toHtml []
         ]
 
 
@@ -20,72 +20,77 @@ size : Html msg
 size =
     div [ class "flex flex-col items-start gap-8 sm:flex-row" ]
         [ div [ class "flex items-start gap-2" ]
-            [ Button.view [ Button.extraSmall, Button.outline ] [] [ text "Extra Small" ]
-            , Button.view [ Button.iconExtraSmall, Button.outline ] [ attribute "aria-label" "Submit" ] [ Icons.arrowUpRight [] ]
+            [ Button.view "Extra Small" |> Button.extraSmall |> Button.outline |> Button.toHtml []
+            , Button.icon (Phosphor.arrowUpRight Regular |> Phosphor.toHtml []) |> Button.label "Submit" |> Button.extraSmall |> Button.outline |> Button.toHtml []
             ]
         , div [ class "flex items-start gap-2" ]
-            [ Button.view [ Button.small, Button.outline ] [] [ text "Small" ]
-            , Button.view [ Button.iconSmall, Button.outline ] [ attribute "aria-label" "Submit" ] [ Icons.arrowUpRight [] ]
+            [ Button.view "Small" |> Button.small |> Button.outline |> Button.toHtml []
+            , Button.icon (Phosphor.arrowUpRight Regular |> Phosphor.toHtml []) |> Button.label "Submit" |> Button.small |> Button.outline |> Button.toHtml []
             ]
         , div [ class "flex items-start gap-2" ]
-            [ Button.view [ Button.outline ] [] [ text "Default" ]
-            , Button.view [ Button.icon, Button.outline ] [ attribute "aria-label" "Submit" ] [ Icons.arrowUpRight [] ]
+            [ Button.view "Default" |> Button.outline |> Button.toHtml []
+            , Button.icon (Phosphor.arrowUpRight Regular |> Phosphor.toHtml []) |> Button.label "Submit" |> Button.outline |> Button.toHtml []
             ]
         , div [ class "flex items-start gap-2" ]
-            [ Button.view [ Button.outline, Button.large ] [] [ text "Large" ]
-            , Button.view [ Button.iconLarge, Button.outline ] [ attribute "aria-label" "Submit" ] [ Icons.arrowUpRight [] ]
+            [ Button.view "Large" |> Button.outline |> Button.large |> Button.toHtml []
+            , Button.icon (Phosphor.arrowUpRight Regular |> Phosphor.toHtml []) |> Button.label "Submit" |> Button.outline |> Button.large |> Button.toHtml []
             ]
         ]
 
 
 default : Html msg
 default =
-    Button.view [] [] [ text "Button" ]
+    Button.view "Button" |> Button.toHtml []
 
 
 outline : Html msg
 outline =
-    Button.view [ Button.outline ] [] [ text "Outline" ]
+    Button.view "Outline" |> Button.outline |> Button.toHtml []
 
 
 secondary : Html msg
 secondary =
-    Button.view [ Button.secondary ] [] [ text "Secondary" ]
+    Button.view "Secondary" |> Button.secondary |> Button.toHtml []
 
 
 ghost : Html msg
 ghost =
-    Button.view [ Button.ghost ] [] [ text "Ghost" ]
+    Button.view "Ghost" |> Button.ghost |> Button.toHtml []
 
 
 destructive : Html msg
 destructive =
-    Button.view [ Button.destructive ] [] [ text "Destructive" ]
+    Button.view "Destructive" |> Button.destructive |> Button.toHtml []
 
 
 link : Html msg
 link =
-    Button.view [ Button.link ] [] [ text "Link" ]
+    Button.view "Link" |> Button.link |> Button.toHtml []
 
 
+{-| An icon-only button needs its icon and an accessible label.
+-}
 icon : Html msg
 icon =
-    Button.view [ Button.outline, Button.icon ]
-        [ attribute "aria-label" "Upgrade" ]
-        [ Icons.circleFadingArrowUp [] ]
+    Button.icon (Phosphor.arrowCircleUp Regular |> Phosphor.toHtml [])
+        |> Button.label "Upgrade"
+        |> Button.outline
+        |> Button.toHtml []
 
 
-{-| Mark an icon next to the label with `data-icon` so the padding is adjusted for it.
+{-| `startIcon` and `endIcon` adjust the padding for the icon.
 -}
 withIcon : Html msg
 withIcon =
     div [ class "flex gap-2" ]
-        [ Button.view [ Button.outline ]
-            []
-            [ Icons.gitBranch [ attribute "data-icon" "inline-start" ], text " New Branch" ]
-        , Button.view [ Button.outline ]
-            []
-            [ text "Fork", Icons.gitFork [ attribute "data-icon" "inline-end" ] ]
+        [ Button.view "New Branch"
+            |> Button.outline
+            |> Button.startIcon (Phosphor.gitBranch Regular |> Phosphor.toHtml [])
+            |> Button.toHtml []
+        , Button.view "Fork"
+            |> Button.outline
+            |> Button.endIcon (Phosphor.gitFork Regular |> Phosphor.toHtml [])
+            |> Button.toHtml []
         ]
 
 
@@ -94,42 +99,47 @@ withIcon =
 rounded : Html msg
 rounded =
     div [ class "flex gap-2" ]
-        [ Button.view [] [ class "rounded-full!" ] [ text "Get Started" ]
-        , Button.view [ Button.outline, Button.icon ] [ class "rounded-full!" ] [ Icons.arrowUp [] ]
+        [ Button.view "Get Started" |> Button.toHtml [ class "rounded-full!" ]
+        , Button.icon (Phosphor.arrowUp Regular |> Phosphor.toHtml [])
+            |> Button.label "Submit"
+            |> Button.outline
+            |> Button.toHtml [ class "rounded-full!" ]
         ]
 
 
 spinner : Html msg
 spinner =
     div [ class "flex gap-2" ]
-        [ Button.view [ Button.outline ]
-            [ disabled True ]
-            [ Spinner.view [ attribute "data-icon" "inline-start" ], text "Generating" ]
-        , Button.view [ Button.secondary ]
-            [ disabled True ]
-            [ text "Downloading", Spinner.view [ attribute "data-icon" "inline-start" ] ]
+        [ Button.view "Generating"
+            |> Button.outline
+            |> Button.startIcon (Spinner.view [])
+            |> Button.toHtml [ disabled True ]
+        , Button.view "Downloading"
+            |> Button.secondary
+            |> Button.endIcon (Spinner.view [])
+            |> Button.toHtml [ disabled True ]
         ]
 
 
-{-| Use `attributes` to give another element the button styles.
+{-| Use `toAttributes` to give another element the button styles.
 -}
 asLink : Html msg
 asLink =
-    a (href "#" :: Button.attributes [ Button.secondary, Button.small ]) [ text "Login" ]
+    a (href "#" :: Button.toAttributes (Button.view "" |> Button.secondary |> Button.small)) [ text "Login" ]
 
 
 rtl : Html msg
 rtl =
     div [ class "flex flex-wrap items-center gap-2 md:flex-row", dir "rtl" ]
-        [ Button.view [ Button.outline ] [] [ text "زر" ]
-        , Button.view [ Button.destructive ] [] [ text "حذف" ]
-        , Button.view [ Button.outline ]
-            []
-            [ text "إرسال "
-            , Icons.arrowRight [ Svg.Attributes.class "rtl:rotate-180", attribute "data-icon" "inline-end" ]
-            ]
-        , Button.view [ Button.outline, Button.icon ] [ attribute "aria-label" "Add" ] [ Icons.plus [] ]
-        , Button.view [ Button.secondary ]
-            [ disabled True ]
-            [ Spinner.view [ attribute "data-icon" "inline-start" ], text " جاري التحميل" ]
+        [ Button.view "زر" |> Button.outline |> Button.toHtml []
+        , Button.view "حذف" |> Button.destructive |> Button.toHtml []
+        , Button.view "إرسال "
+            |> Button.outline
+            |> Button.endIcon (Phosphor.arrowRight Regular |> Phosphor.toHtml [ Svg.Attributes.class "rtl:rotate-180" ])
+            |> Button.toHtml []
+        , Button.icon (Phosphor.plus Regular |> Phosphor.toHtml []) |> Button.label "Add" |> Button.outline |> Button.toHtml []
+        , Button.view "جاري التحميل"
+            |> Button.secondary
+            |> Button.startIcon (Spinner.view [])
+            |> Button.toHtml [ disabled True ]
         ]

@@ -8,7 +8,10 @@ project, and from then on the code is yours to read and change.
 ```elm
 import UI.Button as Button
 
-Button.view [ Button.outline, Button.small ] [ onClick Save ] [ text "Save" ]
+Button.view "Save"
+    |> Button.outline
+    |> Button.small
+    |> Button.toHtml [ onClick Save ]
 ```
 
 ## Requirements
@@ -92,26 +95,30 @@ Radio Group and Native Select are styled native inputs, so `checked`, `onCheck`,
 before the attributes. An empty list gives the defaults, and the last option of a kind wins:
 
 ```elm
-Button.view [] [] [ text "Default" ]
-Button.view [ Button.destructive, Button.large ] [] [ text "Delete" ]
+Button.view "Default" |> Button.toHtml []
+Button.view "Delete" |> Button.destructive |> Button.large |> Button.toHtml []
 ```
 
-**Styling other elements.** `Button.attributes` and `Badge.attributes` give you the
+**Button is a builder.** `Button.view` takes the label. `Button.icon` takes an icon, and
+`toHtml` won't compile until `Button.label` gives it an accessible name. Variants, sizes,
+`startIcon` and `endIcon` are setters, and `toHtml` takes the attributes and renders the result.
+
+**Styling other elements.** `Button.toAttributes` and `Badge.attributes` give you the
 styles without the element, the equivalent of shadcn's `buttonVariants`:
 
 ```elm
-a (href "/login" :: Button.attributes [ Button.secondary, Button.small ]) [ text "Login" ]
+a (href "/login" :: Button.toAttributes (Button.view "" |> Button.secondary |> Button.small)) [ text "Login" ]
 ```
 
 **Buttons don't submit forms by default.** `Button.view` renders `type="button"`, like
 shadcn's Base UI button. Pass `type_ "submit"` for a submit button.
 
-**Icons next to a label** get `attribute "data-icon" "inline-start"` (or `"inline-end"`),
-which tightens the button's padding on that side. It uses logical properties, so it is
-also correct in right-to-left layouts:
+**Icons next to a label** go through `startIcon` or `endIcon`, which tighten the button's
+padding on that side. They use logical properties, so they are also correct in
+right-to-left layouts:
 
 ```elm
-Button.view [ Button.outline ] [] [ Icon.check [ attribute "data-icon" "inline-start" ], text "Done" ]
+Button.view "Done" |> Button.outline |> Button.startIcon (Phosphor.check Regular |> Phosphor.toHtml []) |> Button.toHtml []
 ```
 
 **Pointer cursor.** Tailwind v4 buttons use the default cursor. To get a pointer, add

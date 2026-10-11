@@ -10,10 +10,10 @@ module UI.Card exposing
         [ Card.header []
             [ Card.title [] [ text "Notifications" ]
             , Card.description [] [ text "You have 3 unread messages." ]
-            , Card.action [] [ Button.view [ Button.link ] [] [ text "Mark all read" ] ]
+            , Card.action [] [ Button.view "Mark all read" |> Button.link |> Button.toHtml [] ]
             ]
         , Card.content [] [ text "…" ]
-        , Card.footer [] [ Button.view [] [ class "w-full" ] [ text "Done" ] ]
+        , Card.footer [] [ Button.view "Done" |> Button.toHtml [ class "w-full" ] ]
         ]
 
 An image placed first or last in the card runs edge to edge, with rounded outer corners.
