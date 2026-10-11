@@ -345,6 +345,26 @@
       ]
     },
     {
+      "name": "slider",
+      "type": "registry:item",
+      "title": "Slider",
+      "description": "An input where the user selects a value from within a given range.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/json"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Slider.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Slider.elm"
+        }
+      ],
+      "docs": "Run `elm install elm/json` as well: the slider decodes its input events."
+    },
+    {
       "name": "skeleton",
       "type": "registry:item",
       "title": "Skeleton",
