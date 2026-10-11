@@ -268,6 +268,21 @@ toHtml attrs (Select config) =
                 |> List.concatMap sectionItems
                 |> List.filter (\(Item i) -> Just i.value == config.value)
                 |> List.head
+
+        -- The item the list scrolls to when it opens: the selected one, or the first.
+        target =
+            case selected of
+                Just (Item i) ->
+                    Just i.value
+
+                Nothing ->
+                    config.sections
+                        |> List.concatMap sectionItems
+                        |> List.head
+                        |> Maybe.map (\(Item i) -> i.value)
+
+        scrollTarget =
+            Maybe.map2 Tuple.pair target (offsetOf target config.sections)
     in
     Html.span
         [ attribute "data-slot" "select", class "contents" ]
@@ -317,7 +332,7 @@ toHtml attrs (Select config) =
             , class "origin-top scale-95 opacity-0 transition-[opacity,scale,display,overlay] transition-discrete duration-100 ease-out open:scale-100 open:opacity-100 starting:open:scale-95 starting:open:opacity-0"
             , class "bg-popover/70 before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:backdrop-blur-2xl before:backdrop-saturate-150"
             ]
-            (List.map (viewSection popoverId config.onSelect config.value) config.sections)
+            (List.map (viewSection popoverId config.onSelect config.value scrollTarget) config.sections)
         ]
 
 
@@ -331,8 +346,8 @@ sectionItems section =
             []
 
 
-viewSection : String -> Maybe (a -> msg) -> Maybe a -> Section a msg -> Html msg
-viewSection popoverId handler current section =
+viewSection : String -> Maybe (a -> msg) -> Maybe a -> Maybe ( a, Length ) -> Section a msg -> Html msg
+viewSection popoverId handler current scrollTarget section =
     case section of
         Group label list ->
             Html.div
@@ -352,7 +367,7 @@ viewSection popoverId handler current section =
                     Nothing ->
                         []
                  )
-                    ++ List.map (viewItem popoverId handler current) list
+                    ++ List.map (viewItem popoverId handler current scrollTarget) list
                 )
 
         Separator ->
@@ -364,11 +379,26 @@ viewSection popoverId handler current section =
                 []
 
 
-viewItem : String -> Maybe (a -> msg) -> Maybe a -> Item a msg -> Html msg
-viewItem popoverId handler current (Item config) =
+viewItem : String -> Maybe (a -> msg) -> Maybe a -> Maybe ( a, Length ) -> Item a msg -> Html msg
+viewItem popoverId handler current scrollTarget (Item config) =
     let
         isSelected =
             Just config.value == current
+
+        -- A popover keeps its scroll offset while closed. `scroll-initial-target` scrolls
+        -- back to this item on every open, and the margin puts it where the offset math
+        -- expects it: at the top of the list, scrolled by nothing.
+        scrollReset =
+            case scrollTarget of
+                Just ( v, offset ) ->
+                    if v == config.value then
+                        [ attribute "style" ("scroll-margin-top: " ++ css offset ++ "; scroll-initial-target: nearest") ]
+
+                    else
+                        []
+
+                Nothing ->
+                    []
     in
     Html.button
         ([ type_ "button"
@@ -379,8 +409,10 @@ viewItem popoverId handler current (Item config) =
          , attribute "popovertargetaction" "hide"
          , Html.Attributes.disabled config.disabled
          , autofocus isSelected
-         , class "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 ps-1.5 pe-8 text-start text-sm outline-hidden select-none hover:bg-foreground/10 focus:bg-foreground/10 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
          ]
+            ++ scrollReset
+            ++ [ class "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 ps-1.5 pe-8 text-start text-sm outline-hidden select-none hover:bg-foreground/10 focus:bg-foreground/10 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+               ]
             ++ (case handler of
                     Just toMsg ->
                         [ onClick (toMsg config.value) ]
@@ -412,10 +444,11 @@ viewItem popoverId handler current (Item config) =
 -- The popover is placed with CSS anchor positioning. With a selected item, its top is
 -- set so that the item lands over the trigger, clamped so the list never leaves the
 -- viewport: a short list is shifted up to stay whole, a tall one keeps the item on
--- the trigger and scrolls, with at least 20rem of it visible. The offset comes from
--- the default heights of the parts, in rem so it follows the root font size.
--- Otherwise the list goes below the trigger, or above when it doesn't fit below; a
--- minimum height keeps a sliver below from counting as fitting.
+-- the trigger and scrolls, with at least 20rem of it visible. `bottom` and `height:
+-- auto` make it stop at the viewport edge, and `max-height` at its natural height.
+-- The offset comes from the default heights of the parts, in rem so it follows the
+-- root font size. Otherwise the list goes below the trigger, or above when it doesn't
+-- fit below; a minimum height keeps a sliver below from counting as fitting.
 
 
 {-| A CSS length as `calc(<rem>rem + <px>px)`.
@@ -486,10 +519,10 @@ sectionHeight section =
             separatorHeight
 
 
-{-| How far the selected item's top is from the top of the list.
+{-| How far an item's top is from the top of the list.
 -}
-selectedOffset : Maybe a -> List (Section a msg) -> Maybe Length
-selectedOffset current sections =
+offsetOf : Maybe a -> List (Section a msg) -> Maybe Length
+offsetOf current sections =
     case sections of
         [] ->
             Nothing
@@ -512,10 +545,10 @@ selectedOffset current sections =
                         )
 
                 Nothing ->
-                    Maybe.map (add (sectionHeight (Group label list))) (selectedOffset current rest)
+                    Maybe.map (add (sectionHeight (Group label list))) (offsetOf current rest)
 
         Separator :: rest ->
-            Maybe.map (add separatorHeight) (selectedOffset current rest)
+            Maybe.map (add separatorHeight) (offsetOf current rest)
 
 
 placement :
@@ -530,7 +563,7 @@ placement config selected =
         offset =
             case ( config.align, selected ) of
                 ( SelectedItem, Just _ ) ->
-                    selectedOffset config.value config.sections
+                    offsetOf config.value config.sections
 
                 _ ->
                     Nothing
@@ -548,7 +581,8 @@ placement config selected =
                 ++ css shift
                 ++ ", max(0.25rem, 100% - 0.25rem - min("
                 ++ css height
-                ++ ", 20rem))); left: anchor(left)"
+                ++ ", 20rem))); bottom: 0.25rem; left: anchor(left); height: auto; max-height: "
+                ++ css height
 
         Nothing ->
             "position-area: bottom; position-try-fallbacks: top; margin: 0.25rem 0; min-height: min(" ++ css height ++ ", 10rem)"
