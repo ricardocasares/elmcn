@@ -406,13 +406,10 @@ viewHome =
 componentCard : Component -> Html msg
 componentCard component =
     a [ href ("#/" ++ component.slug), class "block" ]
-        [ Card.view []
-            [ class "h-full transition-colors hover:bg-muted/50" ]
-            [ Card.header []
-                [ Card.title [] [ text component.title ]
-                , Card.description [] [ text component.description ]
-                ]
-            ]
+        [ Card.new
+            |> Card.title [ text component.title ]
+            |> Card.description [ text component.description ]
+            |> Card.toHtml [ class "h-full transition-colors hover:bg-muted/50" ]
         ]
 
 
