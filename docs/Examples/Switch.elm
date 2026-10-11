@@ -9,11 +9,17 @@ import UI.Switch as Switch
 demo : Html msg
 demo =
     Label.view []
-        [ Switch.view [] [ checked False ]
+        [ Switch.new
+            |> Switch.toHtml [ checked False ]
         , text "Airplane mode"
         ]
 
 
 small : Html msg
 small =
-    Label.view [] [ Switch.view [ Switch.small ] [ checked True ], text "Small switch" ]
+    Label.view []
+        [ Switch.new
+            |> Switch.small
+            |> Switch.toHtml [ checked True ]
+        , text "Small switch"
+        ]

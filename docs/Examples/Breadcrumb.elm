@@ -7,14 +7,21 @@ import UI.Breadcrumb as Breadcrumb
 
 demo : Html msg
 demo =
-    Breadcrumb.view []
-        [ Breadcrumb.list []
-            [ Breadcrumb.item [] [ Breadcrumb.link [ href "#" ] [ text "Home" ] ]
-            , Breadcrumb.separator [] []
-            , Breadcrumb.item [] [ Breadcrumb.ellipsis [] ]
-            , Breadcrumb.separator [] []
-            , Breadcrumb.item [] [ Breadcrumb.link [ href "#" ] [ text "Components" ] ]
-            , Breadcrumb.separator [] []
-            , Breadcrumb.item [] [ Breadcrumb.page [] [ text "Breadcrumb" ] ]
-            ]
-        ]
+    Breadcrumb.new
+        |> Breadcrumb.link [ href "#" ] [ text "Home" ]
+        |> Breadcrumb.ellipsis
+        |> Breadcrumb.link [ href "#" ] [ text "Components" ]
+        |> Breadcrumb.page [ text "Breadcrumb" ]
+        |> Breadcrumb.toHtml []
+
+
+{-| A slash instead of the chevron.
+-}
+customSeparator : Html msg
+customSeparator =
+    Breadcrumb.new
+        |> Breadcrumb.separator (text "/")
+        |> Breadcrumb.link [ href "#" ] [ text "Home" ]
+        |> Breadcrumb.link [ href "#" ] [ text "Components" ]
+        |> Breadcrumb.page [ text "Breadcrumb" ]
+        |> Breadcrumb.toHtml []

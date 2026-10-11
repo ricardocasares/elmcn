@@ -2,4 +2,3 @@ elm-stuff/
 node_modules/
 dist/
 docs/Generated.elm
-docs/*.elm.d.ts

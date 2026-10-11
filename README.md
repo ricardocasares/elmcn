@@ -84,17 +84,10 @@ native popover, positioned with CSS anchor positioning.
 **Attributes, then children.** Every component takes `List (Attribute msg)` like
 `elm/html`. Attributes you pass come after the component's own, so they override them
 (`type_`, `role`, …). Parts of compound components are functions in the same module:
-`Breadcrumb.item`, `Table.row`, and so on.
+`Pagination.link`, `Table.row`, and so on.
 
-**Options come first.** Simple components with variants take a list of options before
-the attributes. An empty list gives the defaults, and the last option of a kind wins:
-
-```elm
-Separator.view [] []
-Separator.view [ Separator.vertical ] []
-```
-
-**Components with content are builders.** Button, Badge, Alert, Avatar, Card, Empty, Kbd and Select start
+**Components with options or content are builders.** Button, Badge, Alert, Avatar, Breadcrumb, Card, Empty, Kbd,
+Native Select, Progress, Select, Separator and Switch start
 with `new`, add content, pipe through setters, and render at the end. The compiler won't
 let you render until the required content is there: a button needs `text`, or `icon` and
 an accessible `label`; a badge needs `text`; an alert needs `title`; an avatar needs

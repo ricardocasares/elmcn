@@ -1,40 +1,44 @@
 module Examples.NativeSelect exposing (..)
 
 import Html exposing (Html, text)
-import Html.Attributes exposing (attribute, value)
+import Html.Attributes exposing (value)
 import UI.NativeSelect as NativeSelect
 
 
 demo : Html msg
 demo =
-    NativeSelect.view []
-        []
-        [ NativeSelect.option [ value "" ] [ text "Select status" ]
-        , NativeSelect.option [ value "todo" ] [ text "Todo" ]
-        , NativeSelect.option [ value "in-progress" ] [ text "In Progress" ]
-        , NativeSelect.option [ value "done" ] [ text "Done" ]
-        ]
+    NativeSelect.new
+        |> NativeSelect.options
+            [ NativeSelect.option [ value "" ] [ text "Select status" ]
+            , NativeSelect.option [ value "todo" ] [ text "Todo" ]
+            , NativeSelect.option [ value "in-progress" ] [ text "In Progress" ]
+            , NativeSelect.option [ value "done" ] [ text "Done" ]
+            ]
+        |> NativeSelect.toHtml []
 
 
 small : Html msg
 small =
-    NativeSelect.view [ NativeSelect.small ]
-        []
-        [ NativeSelect.option [] [ text "Small" ]
-        , NativeSelect.option [] [ text "Select" ]
-        ]
+    NativeSelect.new
+        |> NativeSelect.small
+        |> NativeSelect.options
+            [ NativeSelect.option [] [ text "Small" ]
+            , NativeSelect.option [] [ text "Select" ]
+            ]
+        |> NativeSelect.toHtml []
 
 
 groups : Html msg
 groups =
-    NativeSelect.view []
-        []
-        [ NativeSelect.optionGroup [ attribute "label" "Engineering" ]
-            [ NativeSelect.option [] [ text "Frontend" ]
-            , NativeSelect.option [] [ text "Backend" ]
+    NativeSelect.new
+        |> NativeSelect.options
+            [ NativeSelect.optionGroup "Engineering"
+                [ NativeSelect.option [] [ text "Frontend" ]
+                , NativeSelect.option [] [ text "Backend" ]
+                ]
+            , NativeSelect.optionGroup "Design"
+                [ NativeSelect.option [] [ text "Product" ]
+                , NativeSelect.option [] [ text "Brand" ]
+                ]
             ]
-        , NativeSelect.optionGroup [ attribute "label" "Design" ]
-            [ NativeSelect.option [] [ text "Product" ]
-            , NativeSelect.option [] [ text "Brand" ]
-            ]
-        ]
+        |> NativeSelect.toHtml []

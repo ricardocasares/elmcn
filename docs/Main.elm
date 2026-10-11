@@ -367,13 +367,14 @@ viewMobileNav route =
                     ""
     in
     div [ class "mb-8 md:hidden" ]
-        [ NativeSelect.view []
-            [ onInput PageSelected, value current, class "w-full" ]
-            (NativeSelect.option [ value "", selected (current == "") ] [ text "Introduction" ]
-                :: List.map
-                    (\c -> NativeSelect.option [ value c.slug, selected (c.slug == current) ] [ text c.title ])
-                    Generated.components
-            )
+        [ NativeSelect.new
+            |> NativeSelect.options
+                (NativeSelect.option [ value "", selected (current == "") ] [ text "Introduction" ]
+                    :: List.map
+                        (\c -> NativeSelect.option [ value c.slug, selected (c.slug == current) ] [ text c.title ])
+                        Generated.components
+                )
+            |> NativeSelect.toHtml [ onInput PageSelected, value current, class "w-full" ]
         ]
 
 
@@ -404,9 +405,8 @@ viewHome model =
             , shellBlock model.copied "npx shadcn@latest add ricardocasares/elmcn/button ricardocasares/elmcn/card"
             ]
         , section "Conventions"
-            [ prose [ text "Every component takes a List (Attribute msg) like elm/html, and attributes you pass come after the component's own, so they override them. Simple components with variants take a list of options first. An empty list gives the defaults, and the last option of a kind wins." ]
-            , elmBlock model.copied "Separator.view [] []\nSeparator.view [ Separator.vertical ] []"
-            , prose [ text "Components with content, such as Button, Badge, Alert and Avatar, are builders. Start with new, add content, pipe through setters, and render at the end. The compiler won't let you render until the required content is there." ]
+            [ prose [ text "Every component takes a List (Attribute msg) like elm/html, and attributes you pass come after the component's own, so they override them." ]
+            , prose [ text "Components with options or content are builders. Start with new, add content, pipe through setters, and render at the end. The compiler won't let you render until the required content is there." ]
             , elmBlock model.copied "Button.new\n    |> Button.text \"Delete\"\n    |> Button.destructive\n    |> Button.large\n    |> Button.toHtml []\n\nButton.new\n    |> Button.icon trashIcon\n    |> Button.label \"Delete\"\n    |> Button.toHtml [ onClick Delete ]"
             ]
         , section "Components"
