@@ -97,17 +97,18 @@ withIcon =
         ]
 
 
-{-| Elm keeps every class, so override one the component already sets with Tailwind's important modifier.
+{-| `rounded` makes a pill of any size.
 -}
 rounded : Html msg
 rounded =
     div [ class "flex gap-2" ]
-        [ Button.new |> Button.text "Get Started" |> Button.toHtml [ class "rounded-full!" ]
+        [ Button.new |> Button.text "Get Started" |> Button.rounded |> Button.toHtml []
         , Button.new
             |> Button.icon (Phosphor.arrowUp Regular |> Phosphor.toHtml [])
             |> Button.label "Submit"
             |> Button.outline
-            |> Button.toHtml [ class "rounded-full!" ]
+            |> Button.rounded
+            |> Button.toHtml []
         ]
 
 

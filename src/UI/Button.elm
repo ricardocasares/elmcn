@@ -5,6 +5,7 @@ module UI.Button exposing
     , startIcon, endIcon
     , destructive, outline, secondary, ghost, link
     , extraSmall, small, large
+    , rounded
     , toHtml, toAttributes
     )
 
@@ -64,6 +65,11 @@ Icon-only buttons are square versions of the same sizes. When several sizes are 
 @docs extraSmall, small, large
 
 
+## Shape
+
+@docs rounded
+
+
 # Rendering
 
 @docs toHtml, toAttributes
@@ -87,6 +93,7 @@ type Button shape status msg
     = Button
         { variant : Variant
         , size : Size
+        , radius : Radius
         , content : Content msg
         }
 
@@ -150,6 +157,11 @@ type Size
     | Large
 
 
+type Radius
+    = Corners
+    | Pill
+
+
 
 -- CONSTRUCTOR
 
@@ -158,7 +170,7 @@ type Size
 -}
 new : Button shape NeedsContent msg
 new =
-    Button { variant = Default, size = Medium, content = Empty }
+    Button { variant = Default, size = Medium, radius = Corners, content = Empty }
 
 
 
@@ -243,6 +255,7 @@ toAttributes (Button config) =
     [ class "group/button inline-flex shrink-0 items-center justify-center border bg-clip-padding font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-3 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0"
     , class (variantClass config.variant)
     , class (sizeClass config.content config.size)
+    , class (radiusClass config.size config.radius)
     ]
 
 
@@ -336,6 +349,13 @@ large =
     size Large
 
 
+{-| A pill shape, for any size.
+-}
+rounded : Button shape status msg -> Button shape status msg
+rounded (Button config) =
+    Button { config | radius = Pill }
+
+
 
 -- shadcn merges its base, variant and size classes with tailwind-merge, which drops
 -- the base classes a variant or size overrides. Elm keeps every class, so classes
@@ -378,29 +398,50 @@ labeledSizeClass : Size -> String
 labeledSizeClass size_ =
     case size_ of
         Medium ->
-            "h-8 gap-1.5 rounded-lg px-2.5 text-sm has-data-[icon=inline-end]:pe-2 has-data-[icon=inline-start]:ps-2 [&_svg:not([class*='size-'])]:size-4"
+            "h-8 gap-1.5 px-2.5 text-sm has-data-[icon=inline-end]:pe-2 has-data-[icon=inline-start]:ps-2 [&_svg:not([class*='size-'])]:size-4"
 
         ExtraSmall ->
-            "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pe-1.5 has-data-[icon=inline-start]:ps-1.5 [&_svg:not([class*='size-'])]:size-3"
+            "h-6 gap-1 px-2 text-xs has-data-[icon=inline-end]:pe-1.5 has-data-[icon=inline-start]:ps-1.5 [&_svg:not([class*='size-'])]:size-3"
 
         Small ->
-            "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pe-1.5 has-data-[icon=inline-start]:ps-1.5 [&_svg:not([class*='size-'])]:size-3.5"
+            "h-7 gap-1 px-2.5 text-[0.8rem] has-data-[icon=inline-end]:pe-1.5 has-data-[icon=inline-start]:ps-1.5 [&_svg:not([class*='size-'])]:size-3.5"
 
         Large ->
-            "h-9 gap-1.5 rounded-lg px-2.5 text-sm has-data-[icon=inline-end]:pe-2 has-data-[icon=inline-start]:ps-2 [&_svg:not([class*='size-'])]:size-4"
+            "h-9 gap-1.5 px-2.5 text-sm has-data-[icon=inline-end]:pe-2 has-data-[icon=inline-start]:ps-2 [&_svg:not([class*='size-'])]:size-4"
 
 
 iconSizeClass : Size -> String
 iconSizeClass size_ =
     case size_ of
         Medium ->
-            "size-8 rounded-lg text-sm [&_svg:not([class*='size-'])]:size-4"
+            "size-8 text-sm [&_svg:not([class*='size-'])]:size-4"
 
         ExtraSmall ->
-            "size-6 rounded-[min(var(--radius-md),10px)] text-sm in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3"
+            "size-6 text-sm [&_svg:not([class*='size-'])]:size-3"
 
         Small ->
-            "size-7 rounded-[min(var(--radius-md),12px)] text-sm in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-4"
+            "size-7 text-sm [&_svg:not([class*='size-'])]:size-4"
 
         Large ->
-            "size-9 rounded-lg text-sm [&_svg:not([class*='size-'])]:size-4"
+            "size-9 text-sm [&_svg:not([class*='size-'])]:size-4"
+
+
+radiusClass : Size -> Radius -> String
+radiusClass size_ radius =
+    case radius of
+        Pill ->
+            "rounded-full"
+
+        Corners ->
+            case size_ of
+                Medium ->
+                    "rounded-lg"
+
+                ExtraSmall ->
+                    "rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg"
+
+                Small ->
+                    "rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg"
+
+                Large ->
+                    "rounded-lg"
