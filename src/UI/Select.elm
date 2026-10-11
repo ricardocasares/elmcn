@@ -352,6 +352,10 @@ toHtml attrs (Select config) =
             -- The blur is on the popover itself rather than a `::before`, which would
             -- scroll away with the content.
             , class "bg-popover/70 backdrop-blur-2xl backdrop-saturate-150"
+
+            -- The `::backdrop` covers the viewport, which makes iOS Safari stop sampling
+            -- the page color for its bars and paint them with the body background.
+            , class "backdrop:hidden"
             ]
             (List.indexedMap (viewSection popoverId config.onSelect config.value focused) config.sections)
         ]
