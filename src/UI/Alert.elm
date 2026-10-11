@@ -28,7 +28,7 @@ An optional icon is placed in its own column, and an action is pinned to the top
         |> Alert.destructive
         |> Alert.icon (Phosphor.warning Regular |> Phosphor.toHtml [])
         |> Alert.title [ text "Update available" ]
-        |> Alert.action (Button.view "Update" |> Button.outline |> Button.toHtml [])
+        |> Alert.action (Button.new |> Button.text "Update" |> Button.outline |> Button.toHtml [])
         |> Alert.toHtml [ class "max-w-md" ]
 
 @docs Alert, Ready, NeedsTitle

@@ -11,7 +11,7 @@ module UI.Empty exposing
             , Empty.title [] [ text "No projects yet" ]
             , Empty.description [] [ text "Get started by creating your first project." ]
             ]
-        , Empty.content [] [ Button.view "Create project" |> Button.toHtml [] ]
+        , Empty.content [] [ Button.new |> Button.text "Create project" |> Button.toHtml [] ]
         ]
 
 @docs view, header, media, title, description, content

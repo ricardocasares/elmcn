@@ -10,7 +10,25 @@
     <div id="app"></div>
     <script src="main.js"></script>
     <script>
-      Elm.Main.init({ node: document.getElementById("app") });
+      const media = window.matchMedia("(prefers-color-scheme: dark)");
+      let theme = null;
+      try {
+        theme = localStorage.getItem("theme");
+      } catch (_) {}
+
+      const app = Elm.Main.init({
+        node: document.getElementById("app"),
+        flags: { theme, systemDark: media.matches },
+      });
+
+      app.ports.saveTheme.subscribe((value) => {
+        try {
+          localStorage.setItem("theme", value);
+        } catch (_) {}
+      });
+      media.addEventListener("change", (event) =>
+        app.ports.systemThemeChanged.send(event.matches),
+      );
 
       // Copy buttons: Elm renders `data-copy`, the text to copy is the sibling <pre>.
       document.addEventListener("click", (event) => {

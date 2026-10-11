@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Browser.Dom
@@ -7,8 +7,10 @@ import Component exposing (Component, Entry, Example)
 import Generated
 import Highlight
 import Html exposing (Html, a, aside, code, div, h1, h2, h3, header, li, main_, nav, p, pre, span, text, ul)
-import Html.Attributes exposing (attribute, class, href, id, selected, target, type_, value)
+import Html.Attributes exposing (attribute, class, href, id, selected, target, title, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Json.Decode as Decode
+import Phosphor exposing (IconWeight(..))
 import Set exposing (Set)
 import Task
 import UI.Button as Button
@@ -18,13 +20,13 @@ import UI.Table as Table
 import Url exposing (Url)
 
 
-main : Program () Model Msg
+main : Program Decode.Value Model Msg
 main =
     Browser.application
         { init = init
         , update = update
         , view = view
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = \_ -> systemThemeChanged SystemThemeChanged
         , onUrlRequest = LinkClicked
         , onUrlChange = UrlChanged
         }
@@ -37,9 +39,74 @@ main =
 type alias Model =
     { key : Nav.Key
     , route : Route
-    , dark : Bool
+    , theme : Theme
+    , systemDark : Bool
     , codeShown : Set String
     }
+
+
+type Theme
+    = Light
+    | Dark
+    | System
+
+
+themeToString : Theme -> String
+themeToString theme =
+    case theme of
+        Light ->
+            "light"
+
+        Dark ->
+            "dark"
+
+        System ->
+            "system"
+
+
+themeFromString : String -> Theme
+themeFromString value =
+    case value of
+        "light" ->
+            Light
+
+        "dark" ->
+            Dark
+
+        _ ->
+            System
+
+
+{-| Flags are `{ theme : string | null, systemDark : boolean }`; anything malformed falls back to System, light.
+-}
+flagsDecoder : Decode.Decoder ( Theme, Bool )
+flagsDecoder =
+    Decode.map2 Tuple.pair
+        (Decode.oneOf
+            [ Decode.field "theme" Decode.string |> Decode.map themeFromString
+            , Decode.succeed System
+            ]
+        )
+        (Decode.oneOf [ Decode.field "systemDark" Decode.bool, Decode.succeed False ])
+
+
+isDark : Model -> Bool
+isDark model =
+    case model.theme of
+        Light ->
+            False
+
+        Dark ->
+            True
+
+        System ->
+            model.systemDark
+
+
+port saveTheme : String -> Cmd msg
+
+
+port systemThemeChanged : (Bool -> msg) -> Sub msg
 
 
 type Route
@@ -48,9 +115,14 @@ type Route
     | NotFound
 
 
-init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url key =
-    ( { key = key, route = routeFromUrl url, dark = False, codeShown = Set.empty }
+init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url key =
+    let
+        ( theme, systemDark ) =
+            Decode.decodeValue flagsDecoder flags
+                |> Result.withDefault ( System, False )
+    in
+    ( { key = key, route = routeFromUrl url, theme = theme, systemDark = systemDark, codeShown = Set.empty }
     , Cmd.none
     )
 
@@ -77,7 +149,8 @@ type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url
     | PageSelected String
-    | ThemeToggled
+    | ThemeSelected Theme
+    | SystemThemeChanged Bool
     | CodeToggled String Bool
     | Scrolled
 
@@ -99,8 +172,11 @@ update msg model =
         PageSelected slug ->
             ( model, Nav.pushUrl model.key ("#/" ++ slug) )
 
-        ThemeToggled ->
-            ( { model | dark = not model.dark }, Cmd.none )
+        ThemeSelected theme ->
+            ( { model | theme = theme }, saveTheme (themeToString theme) )
+
+        SystemThemeChanged systemDark ->
+            ( { model | systemDark = systemDark }, Cmd.none )
 
         CodeToggled key show ->
             ( { model
@@ -134,7 +210,7 @@ view model =
     , body =
         [ div
             [ class
-                (if model.dark then
+                (if isDark model then
                     "dark"
 
                  else
@@ -173,21 +249,45 @@ viewHeader model =
                 [ a
                     (href "https://github.com/ricardocasares/elmcn"
                         :: target "_blank"
-                        :: Button.toAttributes (Button.view "" |> Button.ghost |> Button.small)
+                        :: Button.toAttributes (Button.new |> Button.ghost |> Button.small)
                     )
                     [ text "GitHub" ]
-                , Button.view
-                    (if model.dark then
-                        "Light mode"
-
-                     else
-                        "Dark mode"
-                    )
-                    |> Button.outline
-                    |> Button.small
-                    |> Button.toHtml [ onClick ThemeToggled, id "theme-toggle" ]
+                , viewThemeSwitcher model.theme
                 ]
             ]
+        ]
+
+
+viewThemeSwitcher : Theme -> Html Msg
+viewThemeSwitcher current =
+    let
+        option theme label icon =
+            Button.new
+                |> Button.icon (icon Regular |> Phosphor.toHtml [])
+                |> Button.label label
+                |> Button.small
+                |> (if theme == current then
+                        Button.secondary
+
+                    else
+                        Button.ghost
+                   )
+                |> Button.toHtml
+                    [ onClick (ThemeSelected theme)
+                    , attribute "aria-pressed"
+                        (if theme == current then
+                            "true"
+
+                         else
+                            "false"
+                        )
+                    , title label
+                    ]
+    in
+    div [ class "flex items-center gap-0.5 rounded-lg border p-0.5", attribute "role" "group", attribute "aria-label" "Theme" ]
+        [ option Light "Light theme" Phosphor.sun
+        , option Dark "Dark theme" Phosphor.moon
+        , option System "System theme" Phosphor.desktop
         ]
 
 
@@ -292,7 +392,7 @@ viewHome =
             ]
         , section "Conventions"
             [ prose [ text "Every component takes a List (Attribute msg) like elm/html, and attributes you pass come after the component's own, so they override them. Components with variants or sizes take a list of options first. An empty list gives the defaults, and the last option of a kind wins." ]
-            , elmBlock "Button.view \"Default\" |> Button.toHtml []\nButton.view \"Delete\" |> Button.destructive |> Button.large |> Button.toHtml []"
+            , elmBlock "Button.new |> Button.text \"Default\" |> Button.toHtml []\nButton.new |> Button.text \"Delete\" |> Button.destructive |> Button.large |> Button.toHtml []"
             ]
         , section "Components"
             [ div [ class "grid gap-4 sm:grid-cols-2" ]
@@ -318,7 +418,7 @@ viewNotFound : Html msg
 viewNotFound =
     div [ class "flex flex-col gap-4" ]
         [ pageHeader "Not found" "There is no page here."
-        , a (href "#/" :: Button.toAttributes (Button.view "" |> Button.outline)) [ text "Back to the introduction" ]
+        , a (href "#/" :: Button.toAttributes (Button.new |> Button.outline)) [ text "Back to the introduction" ]
         ]
 
 
@@ -448,7 +548,8 @@ exampleBox model component example =
             Set.member key model.codeShown
 
         tab label active show =
-            Button.view label
+            Button.new
+                |> Button.text label
                 |> Button.small
                 |> (if active then
                         Button.secondary

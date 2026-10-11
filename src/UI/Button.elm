@@ -1,48 +1,48 @@
 module UI.Button exposing
-    ( Button, Text, Icon, Ready, NeedsLabel
-    , view, icon, label
-    , toHtml, toAttributes
+    ( Button, Text, Icon, Ready, NeedsContent, NeedsLabel
+    , new
+    , text, icon, label
     , startIcon, endIcon
     , destructive, outline, secondary, ghost, link
     , extraSmall, small, large
+    , toHtml, toAttributes
     )
 
 {-| Displays a button or a component that looks like a button.
 
-A button is built with a constructor, adjusted with setters, and rendered with `toHtml`:
+A button is built with `new`, given its content, adjusted with setters, and rendered with `toHtml`:
 
-    Button.view "Save"
+    Button.new
+        |> Button.text "Save"
         |> Button.toHtml [ onClick Save ]
 
-    Button.view "Cancel"
+    Button.new
+        |> Button.text "Cancel"
         |> Button.outline
         |> Button.small
         |> Button.toHtml []
 
-An icon-only button is built from an icon and must then be given an accessible label. `toHtml` won't accept it until it has one:
+Every button needs content. `toHtml` won't accept a button until it has a `text` label, or an `icon` and the accessible `label` that goes with it:
 
-    Button.icon (Phosphor.cube Bold |> Phosphor.toHtml [])
+    Button.new
+        |> Button.icon (Phosphor.cube Bold |> Phosphor.toHtml [])
         |> Button.label "A cube"
         |> Button.outline
         |> Button.toHtml []
 
 The button has `type="button"`, so it doesn't submit forms unless you pass `type_ "submit"` to `toHtml`.
 
-@docs Button, Text, Icon, Ready, NeedsLabel
+@docs Button, Text, Icon, Ready, NeedsContent, NeedsLabel
 
 
-# Constructors
+# Constructor
 
-@docs view, icon, label
+@docs new
 
 
-# Rendering
+# Content
 
-@docs toHtml, toAttributes
-
-Use `toAttributes` to make another element look like a button, for example a link:
-
-    a (href "/login" :: Button.toAttributes (Button.view "" |> Button.secondary |> Button.small)) [ text "Login" ]
+@docs text, icon, label
 
 
 # Setters
@@ -63,6 +63,15 @@ Icon-only buttons are square versions of the same sizes. When several sizes are 
 
 @docs extraSmall, small, large
 
+
+# Rendering
+
+@docs toHtml, toAttributes
+
+Use `toAttributes` to make another element look like a button, for example a link. It accepts a button without content:
+
+    a (href "/login" :: Button.toAttributes (Button.new |> Button.secondary |> Button.small)) [ text "Login" ]
+
 -}
 
 import Html exposing (Attribute, Html)
@@ -71,7 +80,7 @@ import Html.Attributes exposing (attribute, class, type_)
 
 {-| A button being built.
 
-`shape` is [`Text`](#Text) or [`Icon`](#Icon). `status` is [`Ready`](#Ready) once the button can be rendered, or [`NeedsLabel`](#NeedsLabel) while an icon button still lacks its label.
+`shape` is [`Text`](#Text) or [`Icon`](#Icon) once the content is set. `status` is [`Ready`](#Ready) once the button can be rendered, [`NeedsContent`](#NeedsContent) while it has no content, or [`NeedsLabel`](#NeedsLabel) while an icon button still lacks its label.
 
 -}
 type Button shape status msg
@@ -82,7 +91,7 @@ type Button shape status msg
         }
 
 
-{-| A button with a text label, made with [`view`](#view).
+{-| A button with a text label, made with [`text`](#text).
 -}
 type Text
     = Text
@@ -100,6 +109,12 @@ type Ready
     = Ready
 
 
+{-| A button that still needs [`text`](#text) or [`icon`](#icon) before it can be rendered.
+-}
+type NeedsContent
+    = NeedsContent
+
+
 {-| An icon button that still needs [`label`](#label) before it can be rendered.
 -}
 type NeedsLabel
@@ -107,7 +122,8 @@ type NeedsLabel
 
 
 type Content msg
-    = Words
+    = Empty
+    | Words
         { text : String
         , start : Maybe (Html msg)
         , end : Maybe (Html msg)
@@ -135,24 +151,35 @@ type Size
 
 
 
--- CONSTRUCTORS
+-- CONSTRUCTOR
 
 
-{-| A button with a text label.
+{-| An empty button. Give it [`text`](#text), or an [`icon`](#icon) and a [`label`](#label), to make it renderable.
 -}
-view : String -> Button Text Ready msg
-view text =
-    init (Words { text = text, start = Nothing, end = Nothing })
+new : Button shape NeedsContent msg
+new =
+    Button { variant = Default, size = Medium, content = Empty }
 
 
-{-| A square button with only an icon. Give it an accessible name with [`label`](#label).
+
+-- CONTENT
+
+
+{-| A text label. The button becomes renderable.
 -}
-icon : Html msg -> Button Icon NeedsLabel msg
-icon child =
-    init (Glyph { name = "", icon = child })
+text : String -> Button shape NeedsContent msg -> Button Text Ready msg
+text string (Button config) =
+    Button { config | content = Words { text = string, start = Nothing, end = Nothing } }
 
 
-{-| The accessible name of an icon button, set as `aria-label`.
+{-| A single icon, making a square button. Give it an accessible name with [`label`](#label).
+-}
+icon : Html msg -> Button shape NeedsContent msg -> Button Icon NeedsLabel msg
+icon child (Button config) =
+    Button { config | content = Glyph { name = "", icon = child } }
+
+
+{-| The accessible name of an icon button, set as `aria-label`. The button becomes renderable.
 -}
 label : String -> Button Icon NeedsLabel msg -> Button Icon Ready msg
 label name (Button config) =
@@ -160,13 +187,8 @@ label name (Button config) =
         Glyph glyph ->
             Button { config | content = Glyph { glyph | name = name } }
 
-        Words _ ->
+        _ ->
             Button config
-
-
-init : Content msg -> Button shape status msg
-init content =
-    Button { variant = Default, size = Medium, content = content }
 
 
 
@@ -185,25 +207,28 @@ toHtml attrs ((Button config) as button) =
 ariaLabel : Content msg -> List (Attribute msg)
 ariaLabel content =
     case content of
-        Words _ ->
-            []
-
         Glyph { name } ->
             [ attribute "aria-label" name ]
+
+        _ ->
+            []
 
 
 children : Content msg -> List (Html msg)
 children content =
     case content of
-        Words { text, start, end } ->
+        Words words ->
             List.filterMap identity
-                [ Maybe.map (iconSlot "inline-start") start
-                , Just (Html.text text)
-                , Maybe.map (iconSlot "inline-end") end
+                [ Maybe.map (iconSlot "inline-start") words.start
+                , Just (Html.text words.text)
+                , Maybe.map (iconSlot "inline-end") words.end
                 ]
 
         Glyph config ->
             [ config.icon ]
+
+        Empty ->
+            []
 
 
 iconSlot : String -> Html msg -> Html msg
@@ -211,7 +236,7 @@ iconSlot position child =
     Html.span [ attribute "data-icon" position, class "contents" ] [ child ]
 
 
-{-| The button styles, for elements other than `<button>`.
+{-| The button styles, for elements other than `<button>`. Any button is accepted, including one without content.
 -}
 toAttributes : Button shape status msg -> List (Attribute msg)
 toAttributes (Button config) =
@@ -227,28 +252,28 @@ toAttributes (Button config) =
 
 {-| An icon before the label. The padding is adjusted for it.
 -}
-startIcon : Html msg -> Button Text status msg -> Button Text status msg
+startIcon : Html msg -> Button Text Ready msg -> Button Text Ready msg
 startIcon child =
     mapText (\words -> { words | start = Just child })
 
 
 {-| An icon after the label. The padding is adjusted for it.
 -}
-endIcon : Html msg -> Button Text status msg -> Button Text status msg
+endIcon : Html msg -> Button Text Ready msg -> Button Text Ready msg
 endIcon child =
     mapText (\words -> { words | end = Just child })
 
 
 mapText :
     ({ text : String, start : Maybe (Html msg), end : Maybe (Html msg) } -> { text : String, start : Maybe (Html msg), end : Maybe (Html msg) })
-    -> Button Text status msg
-    -> Button Text status msg
+    -> Button Text Ready msg
+    -> Button Text Ready msg
 mapText f (Button config) =
     case config.content of
         Words words ->
             Button { config | content = Words (f words) }
 
-        Glyph _ ->
+        _ ->
             Button config
 
 
@@ -342,11 +367,11 @@ variantClass v =
 sizeClass : Content msg -> Size -> String
 sizeClass content size_ =
     case content of
-        Words _ ->
-            labeledSizeClass size_
-
         Glyph _ ->
             iconSizeClass size_
+
+        _ ->
+            labeledSizeClass size_
 
 
 labeledSizeClass : Size -> String
