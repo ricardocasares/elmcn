@@ -4,11 +4,12 @@
   "description": "shadcn/ui components for Elm, distributed as a shadcn registry",
   "license": "MIT",
   "scripts": {
-    "build": "npm run build:elm && npm run build:css && cp gallery/index.html dist/",
-    "build:elm": "elm make gallery/Main.elm --optimize --output=dist/main.js",
-    "build:css": "tailwindcss -i gallery/app.css -o dist/app.css --minify",
-    "format": "elm-format src gallery --yes",
-    "check": "elm-format src gallery --validate && shadcn registry validate && node scripts/check-registry.mjs",
+    "build": "npm run docs:gen && npm run build:elm && npm run build:css && cp docs/index.html dist/",
+    "build:elm": "elm make docs/Main.elm --optimize --output=dist/main.js",
+    "build:css": "tailwindcss -i docs/app.css -o dist/app.css --minify",
+    "docs:gen": "node scripts/gen-docs.mjs",
+    "format": "elm-format src docs --yes",
+    "check": "npm run docs:gen && elm-format src docs --validate && shadcn registry validate && node scripts/check-registry.mjs",
     "test:install": "node scripts/install-test.mjs"
   },
   "devDependencies": {

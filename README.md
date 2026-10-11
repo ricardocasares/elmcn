@@ -146,7 +146,7 @@ Skeleton.view [ class "size-12 rounded-full!" ]
 
 ```sh
 npm install
-npm run build          # gallery → dist/ (open dist/index.html)
+npm run build          # docs site → dist/ (open dist/index.html)
 npm run check          # elm-format, registry schema, registry ↔ source consistency
 npm run test:install   # install every item into a fresh Elm app and compile it
 ```
@@ -158,7 +158,8 @@ you add a component:
 1. Write `src/UI/<Name>.elm`, porting the classes from the shadcn/ui source.
 2. Add an item to `registry.json`. Its target is the same path under `~/`. List the
    `registryDependencies` it imports and the `meta.elmDependencies` it needs.
-3. Show it in `gallery/Main.elm`.
+3. Add `docs/Examples/<Name>.elm`: every `name : Html msg` in it becomes an example on
+   the docs page, shown with its own source as the code. `demo` is the one at the top.
 4. Run `npm run check && npm run test:install`.
 
 ## License

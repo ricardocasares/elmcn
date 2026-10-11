@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>elmcn</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="main.js"></script>
+    <script>
+      Elm.Main.init({ node: document.getElementById("app") });
+
+      // Copy buttons: Elm renders `data-copy`, the text to copy is the sibling <pre>.
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-copy]");
+        if (!button) return;
+        const text = button.parentElement.querySelector("pre").innerText;
+        navigator.clipboard.writeText(text).then(() => {
+          button.setAttribute("data-copied", "");
+          setTimeout(() => button.removeAttribute("data-copied"), 1500);
+        });
+      });
+    </script>
+  </body>
+</html>
