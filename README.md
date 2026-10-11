@@ -63,6 +63,7 @@ the item you name, not to the items it depends on.
 | `kbd` | `UI.Kbd` |
 | `label` | `UI.Label` |
 | `native-select` | `UI.NativeSelect` |
+| `pagination` | `UI.Pagination` |
 | `progress` | `UI.Progress` |
 | `radio-group` | `UI.RadioGroup` |
 | `select` | `UI.Select` |
@@ -174,7 +175,7 @@ otherwise use Tailwind's important modifier, or edit the component:
 Skeleton.view [ class "size-12 rounded-full!" ]
 ```
 
-**No icons included.** The checkbox tick, select chevron, breadcrumb separators and spinner
+**No icons included.** The checkbox tick, select chevron, breadcrumb separators, pagination chevrons and spinner
 are plain CSS, so elmcn needs only `elm/html`. Bring your own icon library for `Button.startIcon`
 and friends.
 

@@ -252,6 +252,27 @@
       ]
     },
     {
+      "name": "pagination",
+      "type": "registry:item",
+      "title": "Pagination",
+      "description": "Pagination with page navigation, next and previous links.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/button"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Pagination.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Pagination.elm"
+        }
+      ]
+    },
+    {
       "name": "progress",
       "type": "registry:item",
       "title": "Progress",
