@@ -180,6 +180,28 @@
       ]
     },
     {
+      "name": "field",
+      "type": "registry:item",
+      "title": "Field",
+      "description": "Combines labels, controls, and help text to compose accessible form fields and grouped inputs.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/label",
+        "ricardocasares/elmcn/separator"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Field.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Field.elm"
+        }
+      ]
+    },
+    {
       "name": "input",
       "type": "registry:item",
       "title": "Input",
@@ -194,6 +216,27 @@
           "path": "src/UI/Input.elm",
           "type": "registry:file",
           "target": "~/src/UI/Input.elm"
+        }
+      ]
+    },
+    {
+      "name": "input-group",
+      "type": "registry:item",
+      "title": "Input Group",
+      "description": "Displays additional information or actions to an input or textarea.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/button"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/InputGroup.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/InputGroup.elm"
         }
       ]
     },

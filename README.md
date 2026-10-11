@@ -59,7 +59,9 @@ the item you name, not to the items it depends on.
 | `card` | `UI.Card` |
 | `checkbox` | `UI.Checkbox` |
 | `empty` | `UI.Empty` |
+| `field` | `UI.Field` |
 | `input` | `UI.Input` |
+| `input-group` | `UI.InputGroup` |
 | `kbd` | `UI.Kbd` |
 | `label` | `UI.Label` |
 | `native-select` | `UI.NativeSelect` |
