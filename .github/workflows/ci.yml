@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format, validate registry, check registry against sources
+        run: npm run check
+      - name: Install every item into a fresh Elm app and compile it
+        run: npm run test:install
+      - name: Build the gallery
+        run: npm run build

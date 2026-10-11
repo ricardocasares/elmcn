@@ -1,0 +1,439 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "elmcn",
+  "homepage": "https://github.com/ricardocasares/elmcn",
+  "items": [
+    {
+      "name": "theme",
+      "type": "registry:item",
+      "title": "Theme",
+      "description": "shadcn/ui neutral color tokens, radius and dark mode for Tailwind CSS v4. Import it after tailwindcss in your stylesheet.",
+      "docs": "Add `@import \"./elmcn.css\";` after `@import \"tailwindcss\";` in your main stylesheet.",
+      "files": [
+        {
+          "path": "src/elmcn.css",
+          "type": "registry:file",
+          "target": "~/src/elmcn.css"
+        }
+      ]
+    },
+    {
+      "name": "icon",
+      "type": "registry:item",
+      "title": "Icon",
+      "description": "The Lucide icons used by elmcn components.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/svg"
+        ]
+      },
+      "docs": "This component needs elm/svg. If it isn't installed yet, run: elm install elm/svg",
+      "files": [
+        {
+          "path": "src/UI/Icon.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Icon.elm"
+        }
+      ]
+    },
+    {
+      "name": "alert",
+      "type": "registry:item",
+      "title": "Alert",
+      "description": "Displays a callout for user attention.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Alert.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Alert.elm"
+        }
+      ]
+    },
+    {
+      "name": "aspect-ratio",
+      "type": "registry:item",
+      "title": "Aspect Ratio",
+      "description": "Displays content within a desired ratio.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/AspectRatio.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/AspectRatio.elm"
+        }
+      ]
+    },
+    {
+      "name": "avatar",
+      "type": "registry:item",
+      "title": "Avatar",
+      "description": "An image element with a fallback for representing the user.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Avatar.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Avatar.elm"
+        }
+      ]
+    },
+    {
+      "name": "badge",
+      "type": "registry:item",
+      "title": "Badge",
+      "description": "Displays a badge or a component that looks like a badge.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Badge.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Badge.elm"
+        }
+      ]
+    },
+    {
+      "name": "breadcrumb",
+      "type": "registry:item",
+      "title": "Breadcrumb",
+      "description": "Displays the path to the current resource using a hierarchy of links.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/icon"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/svg"
+        ]
+      },
+      "docs": "This component needs elm/svg. If it isn't installed yet, run: elm install elm/svg",
+      "files": [
+        {
+          "path": "src/UI/Breadcrumb.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Breadcrumb.elm"
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:item",
+      "title": "Button",
+      "description": "Displays a button or a component that looks like a button.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Button.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Button.elm"
+        }
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:item",
+      "title": "Card",
+      "description": "Displays a card with header, content, and footer.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Card.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Card.elm"
+        }
+      ]
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:item",
+      "title": "Checkbox",
+      "description": "A control that allows the user to toggle between checked and not checked.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/icon"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/svg"
+        ]
+      },
+      "docs": "This component needs elm/svg. If it isn't installed yet, run: elm install elm/svg",
+      "files": [
+        {
+          "path": "src/UI/Checkbox.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Checkbox.elm"
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "type": "registry:item",
+      "title": "Empty",
+      "description": "Displays an empty state.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Empty.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Empty.elm"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "type": "registry:item",
+      "title": "Input",
+      "description": "Displays a form input field.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Input.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Input.elm"
+        }
+      ]
+    },
+    {
+      "name": "kbd",
+      "type": "registry:item",
+      "title": "Kbd",
+      "description": "Displays textual user input from a keyboard.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Kbd.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Kbd.elm"
+        }
+      ]
+    },
+    {
+      "name": "label",
+      "type": "registry:item",
+      "title": "Label",
+      "description": "Renders an accessible label associated with controls.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Label.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Label.elm"
+        }
+      ]
+    },
+    {
+      "name": "native-select",
+      "type": "registry:item",
+      "title": "Native Select",
+      "description": "A styled native HTML select element.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/icon"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/svg"
+        ]
+      },
+      "docs": "This component needs elm/svg. If it isn't installed yet, run: elm install elm/svg",
+      "files": [
+        {
+          "path": "src/UI/NativeSelect.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/NativeSelect.elm"
+        }
+      ]
+    },
+    {
+      "name": "progress",
+      "type": "registry:item",
+      "title": "Progress",
+      "description": "Displays an indicator showing the completion progress of a task.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Progress.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Progress.elm"
+        }
+      ]
+    },
+    {
+      "name": "radio-group",
+      "type": "registry:item",
+      "title": "Radio Group",
+      "description": "A set of checkable buttons where no more than one can be checked at a time.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/RadioGroup.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/RadioGroup.elm"
+        }
+      ]
+    },
+    {
+      "name": "separator",
+      "type": "registry:item",
+      "title": "Separator",
+      "description": "Visually or semantically separates content.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Separator.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Separator.elm"
+        }
+      ]
+    },
+    {
+      "name": "skeleton",
+      "type": "registry:item",
+      "title": "Skeleton",
+      "description": "Use to show a placeholder while content is loading.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Skeleton.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Skeleton.elm"
+        }
+      ]
+    },
+    {
+      "name": "spinner",
+      "type": "registry:item",
+      "title": "Spinner",
+      "description": "An indicator that can be used to show a loading state.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/icon"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/svg"
+        ]
+      },
+      "docs": "This component needs elm/svg. If it isn't installed yet, run: elm install elm/svg",
+      "files": [
+        {
+          "path": "src/UI/Spinner.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Spinner.elm"
+        }
+      ]
+    },
+    {
+      "name": "switch",
+      "type": "registry:item",
+      "title": "Switch",
+      "description": "A control that allows the user to toggle between checked and not checked.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Switch.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Switch.elm"
+        }
+      ]
+    },
+    {
+      "name": "table",
+      "type": "registry:item",
+      "title": "Table",
+      "description": "A responsive table component.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Table.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Table.elm"
+        }
+      ]
+    },
+    {
+      "name": "textarea",
+      "type": "registry:item",
+      "title": "Textarea",
+      "description": "Displays a form textarea.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Textarea.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Textarea.elm"
+        }
+      ]
+    }
+  ]
+}
