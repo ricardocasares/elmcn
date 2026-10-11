@@ -317,6 +317,12 @@ alerts =
             [ Alert.title [] [ text "Unable to process your payment." ]
             , Alert.description [] [ p [] [ text "Please verify your billing information and try again." ] ]
             ]
+        , Alert.view []
+            []
+            [ Alert.title [] [ text "Dark mode is now available" ]
+            , Alert.description [] [ text "Enable it under your profile settings." ]
+            , Alert.action [] [ Button.view [ Button.outline ] [] [ text "Enable" ] ]
+            ]
         ]
 
 
