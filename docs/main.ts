@@ -1,0 +1,48 @@
+import "./app.css";
+import { Elm } from "./Main.elm";
+
+const media = window.matchMedia("(prefers-color-scheme: dark)");
+let theme: string | null = null;
+try {
+  theme = localStorage.getItem("theme");
+} catch (_) {}
+
+// The `dark` class goes on <html> as well as on Elm's root, so <body> has the
+// right background, and the theme color follows it: browsers tint their bars
+// from these. The colors are `--background` in src/elmcn.css.
+const applyTheme = () => {
+  const dark = theme === "dark" || (theme !== "light" && media.matches);
+  document.documentElement.classList.toggle("dark", dark);
+  document
+    .querySelector('meta[name="theme-color"]')!
+    .setAttribute("content", dark ? "#0a0a0a" : "#ffffff");
+};
+applyTheme();
+
+const app = Elm.Main.init({
+  node: document.getElementById("app"),
+  flags: { theme, systemDark: media.matches },
+});
+
+app.ports.saveTheme.subscribe((value: string) => {
+  theme = value;
+  applyTheme();
+  try {
+    localStorage.setItem("theme", value);
+  } catch (_) {}
+});
+media.addEventListener("change", (event) => {
+  applyTheme();
+  app.ports.systemThemeChanged.send(event.matches);
+});
+
+// Copy buttons: Elm renders `data-copy`, the text to copy is the sibling <pre>.
+document.addEventListener("click", (event) => {
+  const button = (event.target as Element).closest("[data-copy]");
+  if (!button) return;
+  const text = button.parentElement!.querySelector("pre")!.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    button.setAttribute("data-copied", "");
+    setTimeout(() => button.removeAttribute("data-copied"), 1500);
+  });
+});

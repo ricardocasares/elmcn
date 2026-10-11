@@ -4,9 +4,10 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "types": ["bun"],
+    "lib": ["ESNext", "DOM"],
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["scripts"]
+  "include": ["scripts", "docs", "vite.config.ts"]
 }
