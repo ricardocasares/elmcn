@@ -1,23 +1,38 @@
 module UI.Separator exposing
-    ( view
-    , Option, vertical
+    ( Separator
+    , new
+    , vertical
+    , toHtml
     )
 
 {-| Visually separates content.
 
-    Separator.view [] []
+    Separator.new
+        |> Separator.toHtml [ class "my-4" ]
 
-    Separator.view [ Separator.vertical ] []
+    Separator.new
+        |> Separator.vertical
+        |> Separator.toHtml []
 
 The separator is decorative and hidden from assistive technology. For a meaningful
 separator, pass `attribute "role" "separator"`.
 
-@docs view
+@docs Separator
 
 
-# Options
+# Constructor
 
-@docs Option, vertical
+@docs new
+
+
+# Orientation
+
+@docs vertical
+
+
+# Rendering
+
+@docs toHtml
 
 -}
 
@@ -25,28 +40,10 @@ import Html exposing (Attribute, Html)
 import Html.Attributes exposing (attribute, class)
 
 
-{-| -}
-view : List Option -> List (Attribute msg) -> Html msg
-view options attrs =
-    let
-        orientation =
-            List.foldl (\(Orientation o) _ -> o) Horizontal options
-    in
-    Html.div
-        ([ attribute "data-slot" "separator"
-         , attribute "role" "none"
-         , attribute "data-orientation" (orientationName orientation)
-         , class "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px data-[orientation=vertical]:self-stretch"
-         ]
-            ++ attrs
-        )
-        []
-
-
-{-| The separator orientation. It is horizontal unless `vertical` is given.
+{-| A separator being built.
 -}
-type Option
-    = Orientation Orientation
+type Separator
+    = Separator { orientation : Orientation }
 
 
 type Orientation
@@ -54,10 +51,44 @@ type Orientation
     | Vertical
 
 
+
+-- CONSTRUCTOR
+
+
+{-| A horizontal separator.
+-}
+new : Separator
+new =
+    Separator { orientation = Horizontal }
+
+
+
+-- ORIENTATION
+
+
 {-| -}
-vertical : Option
-vertical =
-    Orientation Vertical
+vertical : Separator -> Separator
+vertical (Separator config) =
+    Separator { config | orientation = Vertical }
+
+
+
+-- RENDERING
+
+
+{-| Renders the separator. The attributes go on the root, after the styles, so classes can override them.
+-}
+toHtml : List (Attribute msg) -> Separator -> Html msg
+toHtml attrs (Separator config) =
+    Html.div
+        ([ attribute "data-slot" "separator"
+         , attribute "role" "none"
+         , attribute "data-orientation" (orientationName config.orientation)
+         , class "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px data-[orientation=vertical]:self-stretch"
+         ]
+            ++ attrs
+        )
+        []
 
 
 orientationName : Orientation -> String

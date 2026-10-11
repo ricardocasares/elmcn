@@ -2,9 +2,12 @@ import "./app.css";
 import { Elm } from "./Main.elm";
 
 const media = window.matchMedia("(prefers-color-scheme: dark)");
-let theme: string | null = null;
+let theme: "light" | "dark" | "system" | null = null;
 try {
-  theme = localStorage.getItem("theme");
+  const stored = localStorage.getItem("theme");
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    theme = stored;
+  }
 } catch (_) {}
 
 // The `dark` class goes on <html> as well as on Elm's root, so <body> has the
@@ -24,25 +27,25 @@ const app = Elm.Main.init({
   flags: { base: import.meta.env.BASE_URL, theme, systemDark: media.matches },
 });
 
-app.ports.saveTheme.subscribe((value: string) => {
-  theme = value;
-  applyTheme();
-  try {
-    localStorage.setItem("theme", value);
-  } catch (_) {}
-});
-media.addEventListener("change", (event) => {
-  applyTheme();
-  app.ports.systemThemeChanged.send(event.matches);
+app.ports.interopFromElm.subscribe((fromElm) => {
+  switch (fromElm.tag) {
+    case "saveTheme":
+      theme = fromElm.data;
+      applyTheme();
+      try {
+        localStorage.setItem("theme", theme);
+      } catch (_) {}
+      break;
+    case "copyToClipboard":
+      navigator.clipboard.writeText(fromElm.data).catch(() => {});
+      break;
+  }
 });
 
-// Copy buttons: Elm renders `data-copy`, the text to copy is the sibling <pre>.
-document.addEventListener("click", (event) => {
-  const button = (event.target as Element).closest("[data-copy]");
-  if (!button) return;
-  const text = button.parentElement!.querySelector("pre")!.innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    button.setAttribute("data-copied", "");
-    setTimeout(() => button.removeAttribute("data-copied"), 1500);
+media.addEventListener("change", (event) => {
+  applyTheme();
+  app.ports.interopToElm.send({
+    tag: "systemThemeChanged",
+    dark: event.matches,
   });
 });

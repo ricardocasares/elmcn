@@ -1,4 +1,4 @@
-port module Main exposing (Model, Msg, Route, Theme, main)
+module Main exposing (Model, Msg, Route, main)
 
 import Browser
 import Browser.Dom
@@ -6,11 +6,14 @@ import Browser.Navigation as Nav
 import Component exposing (Component, Entry, Example)
 import Generated
 import Highlight
-import Html exposing (Html, a, aside, code, div, h1, h2, h3, header, li, main_, nav, p, pre, span, text, ul)
+import Html exposing (Html, a, aside, code, div, h1, h2, h3, header, li, main_, nav, p, pre, text, ul)
 import Html.Attributes exposing (attribute, class, href, id, selected, target, title, type_, value)
 import Html.Events exposing (onClick, onInput)
+import InteropDefinitions as Interop exposing (Theme)
+import InteropPorts
 import Json.Decode as Decode
 import Phosphor exposing (IconWeight(..))
+import Process
 import Set exposing (Set)
 import State exposing (State)
 import Task
@@ -27,7 +30,7 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions = \_ -> systemThemeChanged SystemThemeChanged
+        , subscriptions = \_ -> Sub.map GotInterop InteropPorts.toElm
         , onUrlRequest = LinkClicked
         , onUrlChange = UrlChanged
         }
@@ -43,62 +46,9 @@ type alias Model =
     , route : Route
     , theme : Theme
     , systemDark : Bool
+    , copied : Maybe String
     , codeShown : Set String
     , state : State
-    }
-
-
-type Theme
-    = Light
-    | Dark
-    | System
-
-
-themeToString : Theme -> String
-themeToString theme =
-    case theme of
-        Light ->
-            "light"
-
-        Dark ->
-            "dark"
-
-        System ->
-            "system"
-
-
-themeFromString : String -> Theme
-themeFromString value =
-    case value of
-        "light" ->
-            Light
-
-        "dark" ->
-            Dark
-
-        _ ->
-            System
-
-
-{-| Flags are `{ base : string, theme : string | null, systemDark : boolean }`. `base` is the path the site is served
-from, "/elmcn/" on GitHub Pages. Anything malformed falls back to "/", System, light.
--}
-flagsDecoder : Decode.Decoder Flags
-flagsDecoder =
-    Decode.map3 Flags
-        (Decode.oneOf [ Decode.field "base" Decode.string |> Decode.map normalizeBase, Decode.succeed "/" ])
-        (Decode.oneOf
-            [ Decode.field "theme" Decode.string |> Decode.map themeFromString
-            , Decode.succeed System
-            ]
-        )
-        (Decode.oneOf [ Decode.field "systemDark" Decode.bool, Decode.succeed False ])
-
-
-type alias Flags =
-    { base : String
-    , theme : Theme
-    , systemDark : Bool
     }
 
 
@@ -124,20 +74,14 @@ normalizeBase base =
 isDark : Model -> Bool
 isDark model =
     case model.theme of
-        Light ->
+        Interop.Light ->
             False
 
-        Dark ->
+        Interop.Dark ->
             True
 
-        System ->
+        Interop.System ->
             model.systemDark
-
-
-port saveTheme : String -> Cmd msg
-
-
-port systemThemeChanged : (Bool -> msg) -> Sub msg
 
 
 type Route
@@ -150,10 +94,18 @@ init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
         { base, theme, systemDark } =
-            Decode.decodeValue flagsDecoder flags
-                |> Result.withDefault { base = "/", theme = System, systemDark = False }
+            InteropPorts.decodeFlags flags
+                |> Result.withDefault { base = "/", theme = Nothing, systemDark = False }
     in
-    ( { key = key, base = base, route = routeFromUrl base url, theme = theme, systemDark = systemDark, codeShown = Set.empty, state = State.init }
+    ( { key = key
+      , base = normalizeBase base
+      , route = routeFromUrl (normalizeBase base) url
+      , theme = Maybe.withDefault Interop.System theme
+      , systemDark = systemDark
+      , copied = Nothing
+      , codeShown = Set.empty
+      , state = State.init
+      }
     , Cmd.none
     )
 
@@ -191,7 +143,9 @@ type Msg
     | UrlChanged Url
     | PageSelected String
     | ThemeSelected Theme
-    | SystemThemeChanged Bool
+    | GotInterop (Result Decode.Error Interop.ToElm)
+    | CopyClicked String
+    | CopiedReset
     | CodeToggled String Bool
     | StateChanged State.Msg
     | Scrolled
@@ -215,10 +169,24 @@ update msg model =
             ( model, Nav.pushUrl model.key (model.base ++ slug) )
 
         ThemeSelected theme ->
-            ( { model | theme = theme }, saveTheme (themeToString theme) )
+            ( { model | theme = theme }, InteropPorts.fromElm (Interop.SaveTheme theme) )
 
-        SystemThemeChanged systemDark ->
+        GotInterop (Ok (Interop.SystemThemeChanged systemDark)) ->
             ( { model | systemDark = systemDark }, Cmd.none )
+
+        GotInterop (Err _) ->
+            ( model, Cmd.none )
+
+        CopyClicked source ->
+            ( { model | copied = Just source }
+            , Cmd.batch
+                [ InteropPorts.fromElm (Interop.CopyToClipboard source)
+                , Task.perform (\_ -> CopiedReset) (Process.sleep 1500)
+                ]
+            )
+
+        CopiedReset ->
+            ( { model | copied = Nothing }, Cmd.none )
 
         CodeToggled key show ->
             ( { model
@@ -270,7 +238,7 @@ view model =
                         [ viewMobileNav model.route
                         , case model.route of
                             Home ->
-                                viewHome model.base
+                                viewHome model
 
                             ComponentPage component ->
                                 viewComponent model component
@@ -330,9 +298,9 @@ viewThemeSwitcher current =
                     ]
     in
     div [ class "flex items-center gap-0.5 rounded-lg border p-0.5", attribute "role" "group", attribute "aria-label" "Theme" ]
-        [ option Light "Light theme" Phosphor.sun
-        , option Dark "Dark theme" Phosphor.moon
-        , option System "System theme" Phosphor.desktop
+        [ option Interop.Light "Light theme" Phosphor.sun
+        , option Interop.Dark "Dark theme" Phosphor.moon
+        , option Interop.System "System theme" Phosphor.desktop
         ]
 
 
@@ -413,8 +381,8 @@ viewMobileNav route =
 -- PAGES
 
 
-viewHome : String -> Html Msg
-viewHome base =
+viewHome : Model -> Html Msg
+viewHome model =
     div [ class "flex flex-col gap-10" ]
         [ pageHeader "Introduction" "shadcn/ui components for Elm, installed with the shadcn CLI."
         , prose
@@ -429,21 +397,21 @@ viewHome base =
             ]
         , section "Installation"
             [ prose [ text "Add the theme. It writes src/elmcn.css:" ]
-            , shellBlock "npx shadcn@latest add ricardocasares/elmcn/theme"
+            , shellBlock model.copied "npx shadcn@latest add ricardocasares/elmcn/theme"
             , prose [ text "Then import it after Tailwind in your main stylesheet:" ]
-            , shellBlock "@import \"tailwindcss\";\n@import \"./elmcn.css\"; /* path relative to this file */"
+            , shellBlock model.copied "@import \"tailwindcss\";\n@import \"./elmcn.css\"; /* path relative to this file */"
             , prose [ text "Add components. Each one is written to src/UI/<Name>.elm, along with any components it uses:" ]
-            , shellBlock "npx shadcn@latest add ricardocasares/elmcn/button ricardocasares/elmcn/card"
+            , shellBlock model.copied "npx shadcn@latest add ricardocasares/elmcn/button ricardocasares/elmcn/card"
             ]
         , section "Conventions"
             [ prose [ text "Every component takes a List (Attribute msg) like elm/html, and attributes you pass come after the component's own, so they override them. Simple components with variants take a list of options first. An empty list gives the defaults, and the last option of a kind wins." ]
-            , elmBlock "Separator.view [] []\nSeparator.view [ Separator.vertical ] []"
+            , elmBlock model.copied "Separator.view [] []\nSeparator.view [ Separator.vertical ] []"
             , prose [ text "Components with content, such as Button, Badge, Alert and Avatar, are builders. Start with new, add content, pipe through setters, and render at the end. The compiler won't let you render until the required content is there." ]
-            , elmBlock "Button.new\n    |> Button.text \"Delete\"\n    |> Button.destructive\n    |> Button.large\n    |> Button.toHtml []\n\nButton.new\n    |> Button.icon trashIcon\n    |> Button.label \"Delete\"\n    |> Button.toHtml [ onClick Delete ]"
+            , elmBlock model.copied "Button.new\n    |> Button.text \"Delete\"\n    |> Button.destructive\n    |> Button.large\n    |> Button.toHtml []\n\nButton.new\n    |> Button.icon trashIcon\n    |> Button.label \"Delete\"\n    |> Button.toHtml [ onClick Delete ]"
             ]
         , section "Components"
             [ div [ class "grid gap-4 sm:grid-cols-2" ]
-                (List.map (componentCard base) Generated.components)
+                (List.map (componentCard model.base) Generated.components)
             ]
         ]
 
@@ -480,7 +448,7 @@ viewComponent model component =
         , div [ class "flex flex-col gap-10" ]
             (List.map (\e -> exampleBox model component e) hero)
         , section "Installation"
-            ([ shellBlock ("npx shadcn@latest add ricardocasares/elmcn/" ++ component.slug)
+            ([ shellBlock model.copied ("npx shadcn@latest add ricardocasares/elmcn/" ++ component.slug)
              , prose [ text ("This writes " ++ component.file ++ ", along with any components it uses.") ]
              ]
                 ++ (if List.isEmpty component.packages then
@@ -488,12 +456,12 @@ viewComponent model component =
 
                     else
                         [ prose [ text "It also needs these Elm packages:" ]
-                        , shellBlock (String.join "\n" (List.map (\p -> "elm install " ++ p) component.packages))
+                        , shellBlock model.copied (String.join "\n" (List.map (\p -> "elm install " ++ p) component.packages))
                         ]
                    )
             )
         , section "Usage"
-            [ elmBlock ("import " ++ component.module_ ++ " as " ++ String.dropLeft 3 component.module_ ++ "\n\n" ++ component.usage) ]
+            [ elmBlock model.copied ("import " ++ component.module_ ++ " as " ++ String.dropLeft 3 component.module_ ++ "\n\n" ++ component.usage) ]
         , if List.isEmpty rest then
             text ""
 
@@ -612,7 +580,7 @@ exampleBox model component example =
             , tab "Code" showCode True
             ]
         , if showCode then
-            codeBlock "rounded-none border-0" (Highlight.elm example.code)
+            codeBlock model.copied "rounded-none border-0" example.code (Highlight.elm example.code)
 
           else
             div [ class "flex min-h-40 items-center justify-center overflow-x-auto p-6" ]
@@ -624,28 +592,33 @@ exampleBox model component example =
 -- CODE
 
 
-elmBlock : String -> Html msg
-elmBlock source =
-    codeBlock "" (Highlight.elm source)
+elmBlock : Maybe String -> String -> Html Msg
+elmBlock copied source =
+    codeBlock copied "" source (Highlight.elm source)
 
 
-shellBlock : String -> Html msg
-shellBlock source =
-    codeBlock "" [ text source ]
+shellBlock : Maybe String -> String -> Html Msg
+shellBlock copied source =
+    codeBlock copied "" source [ text source ]
 
 
-{-| The copy button is wired up by a click listener in index.html, which reads the text of the `pre`.
+{-| The copy button asks Elm to copy `source`, and shows "Copied" for a moment after.
 -}
-codeBlock : String -> List (Html msg) -> Html msg
-codeBlock extra children =
-    div [ class "group relative rounded-lg border bg-muted/40", class extra ]
+codeBlock : Maybe String -> String -> String -> List (Html Msg) -> Html Msg
+codeBlock copied extra source children =
+    div [ class "relative rounded-lg border bg-muted/40", class extra ]
         [ Html.button
             [ type_ "button"
-            , attribute "data-copy" ""
-            , class "group absolute top-2 right-2 rounded-md border bg-background px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+            , onClick (CopyClicked source)
+            , class "absolute top-2 right-2 rounded-md border bg-background px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
             ]
-            [ span [ class "group-data-[copied]:hidden" ] [ text "Copy" ]
-            , span [ class "hidden group-data-[copied]:inline" ] [ text "Copied" ]
+            [ text
+                (if copied == Just source then
+                    "Copied"
+
+                 else
+                    "Copy"
+                )
             ]
         , pre [ class "overflow-x-auto p-4 pr-16 font-mono text-[13px] leading-relaxed" ]
             [ code [ class "[font-feature-settings:'ss01']" ] children ]
