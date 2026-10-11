@@ -9,20 +9,20 @@
     "build:css": "tailwindcss -i docs/app.css -o dist/app.css --minify",
     "docs:gen": "bun scripts/gen-docs.ts",
     "format": "elm-format src docs --yes",
-    "check": "bun run docs:gen && tsc -p . && elm-format src docs --validate && shadcn registry validate && bun scripts/check-registry.ts",
-    "test:install": "bun scripts/install-test.ts"
+    "check": "bun run docs:gen && tsc -p . && elm-format src docs --validate && elm-review && shadcn registry validate && bun scripts/check-registry.ts",
+    "test:install": "bun scripts/install-test.ts",
+    "postinstall": "elm-tooling install",
+    "prepare": "husky",
+    "review": "elm-review"
   },
   "devDependencies": {
     "@tailwindcss/cli": "4.3.3",
     "@types/bun": "^1.4.2",
-    "elm": "0.19.3-0",
-    "elm-format": "0.8.8",
+    "elm-review": "^2.13.5",
+    "elm-tooling": "^1.21.0",
+    "husky": "^9.1.7",
     "shadcn": "4.21.4",
     "tailwindcss": "4.3.3",
     "typescript": "^7.0.2"
-  },
-  "trustedDependencies": [
-    "elm",
-    "elm-format"
-  ]
+  }
 }

@@ -14,6 +14,6 @@ demo =
 
 square : Html msg
 square =
-    AspectRatio.view (1 / 1)
+    AspectRatio.view 1
         [ class "w-48 rounded-lg bg-muted" ]
         [ div [ class "flex size-full items-center justify-center text-muted-foreground" ] [ text "1 / 1" ] ]

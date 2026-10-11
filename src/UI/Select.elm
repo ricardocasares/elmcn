@@ -432,9 +432,8 @@ viewItem popoverId handler current focused (Item config) =
          , attribute "popovertargetaction" "hide"
          , Html.Attributes.disabled config.disabled
          , autofocus (focused == Just config.value)
+         , class "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 ps-1.5 pe-8 text-start text-sm outline-hidden select-none hover:bg-foreground/10 focus:bg-foreground/10 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
          ]
-            ++ [ class "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 ps-1.5 pe-8 text-start text-sm outline-hidden select-none hover:bg-foreground/10 focus:bg-foreground/10 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-               ]
             ++ (case handler of
                     Just toMsg ->
                         [ onClick (toMsg config.value) ]

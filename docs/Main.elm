@@ -1,4 +1,4 @@
-port module Main exposing (main)
+port module Main exposing (Model, Msg, Route, Theme, main)
 
 import Browser
 import Browser.Dom
