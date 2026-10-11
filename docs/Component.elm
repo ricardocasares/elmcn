@@ -1,6 +1,7 @@
 module Component exposing (Component, Entry, Example)
 
 import Html exposing (Html)
+import State exposing (State)
 
 
 {-| A documented component. `Generated.components` builds these from `registry.json`,
@@ -23,7 +24,7 @@ type alias Example =
     { id : String
     , title : String
     , description : String
-    , view : Html Never
+    , view : State -> Html State.Msg
     , code : String
     }
 

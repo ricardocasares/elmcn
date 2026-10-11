@@ -12,6 +12,7 @@ import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode
 import Phosphor exposing (IconWeight(..))
 import Set exposing (Set)
+import State exposing (State)
 import Task
 import UI.Button as Button
 import UI.Card as Card
@@ -42,6 +43,7 @@ type alias Model =
     , theme : Theme
     , systemDark : Bool
     , codeShown : Set String
+    , state : State
     }
 
 
@@ -122,7 +124,7 @@ init flags url key =
             Decode.decodeValue flagsDecoder flags
                 |> Result.withDefault ( System, False )
     in
-    ( { key = key, route = routeFromUrl url, theme = theme, systemDark = systemDark, codeShown = Set.empty }
+    ( { key = key, route = routeFromUrl url, theme = theme, systemDark = systemDark, codeShown = Set.empty, state = State.init }
     , Cmd.none
     )
 
@@ -152,6 +154,7 @@ type Msg
     | ThemeSelected Theme
     | SystemThemeChanged Bool
     | CodeToggled String Bool
+    | StateChanged State.Msg
     | Scrolled
 
 
@@ -189,6 +192,9 @@ update msg model =
               }
             , Cmd.none
             )
+
+        StateChanged stateMsg ->
+            ( { model | state = State.update stateMsg model.state }, Cmd.none )
 
         Scrolled ->
             ( model, Cmd.none )
@@ -571,7 +577,7 @@ exampleBox model component example =
 
           else
             div [ class "flex min-h-40 items-center justify-center overflow-x-auto p-6" ]
-                [ Html.map never example.view ]
+                [ Html.map StateChanged (example.view model.state) ]
         ]
 
 

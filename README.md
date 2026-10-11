@@ -65,6 +65,7 @@ the item you name, not to the items it depends on.
 | `native-select` | `UI.NativeSelect` |
 | `progress` | `UI.Progress` |
 | `radio-group` | `UI.RadioGroup` |
+| `select` | `UI.Select` |
 | `separator` | `UI.Separator` |
 | `skeleton` | `UI.Skeleton` |
 | `spinner` | `UI.Spinner` |
@@ -74,7 +75,8 @@ the item you name, not to the items it depends on.
 
 None of the components need ports or their own `Model`/`update`. Checkbox, Switch,
 Radio Group and Native Select are styled native inputs, so `checked`, `onCheck`,
-`onInput` and forms work as usual.
+`onInput` and forms work as usual. Select keeps its value in your model and opens as a
+native popover, positioned with CSS anchor positioning.
 
 ## Conventions
 
@@ -91,11 +93,11 @@ Separator.view [] []
 Separator.view [ Separator.vertical ] []
 ```
 
-**Components with content are builders.** Button, Badge, Alert, Avatar, Card, Empty and Kbd start
+**Components with content are builders.** Button, Badge, Alert, Avatar, Card, Empty, Kbd and Select start
 with `new`, add content, pipe through setters, and render at the end. The compiler won't
 let you render until the required content is there: a button needs `text`, or `icon` and
 an accessible `label`; a badge needs `text`; an alert needs `title`; an avatar needs
-`fallback`; a shortcut needs a `key`. Variants, sizes, `rounded`, `startIcon` and
+`fallback`; a shortcut needs a `key`; a select needs an `id` and an `onSelect` handler. Variants, sizes, `rounded`, `startIcon` and
 `endIcon` are setters, and the renderer takes the attributes:
 
 ```elm
@@ -196,7 +198,9 @@ you add a component:
    `registryDependencies` it imports and the `meta.elmDependencies` it needs.
 3. Add `docs/Examples/<Name>.elm`: every `name : Html msg` in it becomes an example on
    the docs page, shown with its own source as the code. `demo` is the one at the top.
-4. Run `npm run check && npm run test:install`.
+   An example that needs state, such as a select remembering its value, is
+   `name : State -> Html State.Msg` instead; see `docs/State.elm`.
+4. Run `bun run check && bun run test:install`.
 
 ## License
 
