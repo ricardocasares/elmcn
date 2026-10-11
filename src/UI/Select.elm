@@ -330,7 +330,7 @@ toHtml attrs (Select config) =
             , attribute "focusgroup" "listbox block"
             , attribute "data-slot" "select-content"
             , attribute "style" ("position-anchor: " ++ anchor ++ "; " ++ placement config selected)
-            , class "fixed isolate z-50 m-0 inset-auto w-[anchor-size(width)] max-h-[calc(100%-0.5rem)] overflow-x-hidden overflow-y-auto rounded-lg border-0 p-0 text-popover-foreground shadow-md ring-1 ring-foreground/10"
+            , class "group/list fixed isolate z-50 m-0 inset-auto w-[anchor-size(width)] max-h-[calc(100%-0.5rem)] overflow-x-hidden overflow-y-auto rounded-lg border-0 p-0 text-popover-foreground shadow-md ring-1 ring-foreground/10"
             , class "origin-top scale-95 opacity-0 ease-out open:scale-100 open:opacity-100 starting:open:scale-95 starting:open:opacity-0"
 
             -- Picking an item hides the popover and changes the placement in the same
@@ -432,7 +432,7 @@ viewItem popoverId handler current focused (Item config) =
          , attribute "popovertargetaction" "hide"
          , Html.Attributes.disabled config.disabled
          , autofocus (focused == Just config.value)
-         , class "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 ps-1.5 pe-8 text-start text-sm outline-hidden select-none hover:bg-foreground/10 focus:bg-foreground/10 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+         , class "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 ps-1.5 pe-8 text-start text-sm outline-hidden select-none hover:bg-foreground/10 focus:bg-foreground/10 group-hover/list:not-hover:focus:bg-transparent disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
          ]
             ++ (case handler of
                     Just toMsg ->
