@@ -247,7 +247,8 @@ viewHeader model =
             [ a [ href "#/", class "text-lg font-semibold tracking-tight" ] [ text "elmcn" ]
             , div [ class "flex items-center gap-2" ]
                 [ Button.new
-                    |> Button.text "GitHub"
+                    |> Button.icon (Phosphor.githubLogo Regular |> Phosphor.toHtml [])
+                    |> Button.label "GitHub"
                     |> Button.ghost
                     |> Button.small
                     |> Button.toAnchor [ href "https://github.com/ricardocasares/elmcn", target "_blank" ]
