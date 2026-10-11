@@ -50,6 +50,7 @@ the item you name, not to the items it depends on.
 
 | Item | Module |
 | --- | --- |
+| `accordion` | `UI.Accordion` |
 | `alert` | `UI.Alert` |
 | `aspect-ratio` | `UI.AspectRatio` |
 | `avatar` | `UI.Avatar` |
@@ -75,7 +76,10 @@ the item you name, not to the items it depends on.
 | `spinner` | `UI.Spinner` |
 | `switch` | `UI.Switch` |
 | `table` | `UI.Table` |
+| `tabs` | `UI.Tabs` |
 | `textarea` | `UI.Textarea` |
+| `toggle` | `UI.Toggle` |
+| `toggle-group` | `UI.ToggleGroup` |
 
 None of the components need ports or their own `Model`/`update`. Checkbox, Switch,
 Radio Group and Native Select are styled native inputs, so `checked`, `onCheck`,

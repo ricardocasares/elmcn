@@ -18,6 +18,26 @@
       ]
     },
     {
+      "name": "accordion",
+      "type": "registry:item",
+      "title": "Accordion",
+      "description": "A vertically stacked set of interactive headings that each reveal a section of content.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/json"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Accordion.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Accordion.elm"
+        }
+      ],
+      "docs": "Run `elm install elm/json` as well: the accordion decodes its toggle events."
+    },
+    {
       "name": "alert",
       "type": "registry:item",
       "title": "Alert",
@@ -480,6 +500,24 @@
       ]
     },
     {
+      "name": "tabs",
+      "type": "registry:item",
+      "title": "Tabs",
+      "description": "A set of layered sections of content\u2014known as tab panels\u2014that are displayed one at a time.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Tabs.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Tabs.elm"
+        }
+      ]
+    },
+    {
       "name": "textarea",
       "type": "registry:item",
       "title": "Textarea",
@@ -494,6 +532,45 @@
           "path": "src/UI/Textarea.elm",
           "type": "registry:file",
           "target": "~/src/UI/Textarea.elm"
+        }
+      ]
+    },
+    {
+      "name": "toggle",
+      "type": "registry:item",
+      "title": "Toggle",
+      "description": "A two-state button that can be either on or off.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Toggle.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Toggle.elm"
+        }
+      ]
+    },
+    {
+      "name": "toggle-group",
+      "type": "registry:item",
+      "title": "Toggle Group",
+      "description": "A set of two-state buttons that can be toggled on or off.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/toggle"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/ToggleGroup.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/ToggleGroup.elm"
         }
       ]
     }
