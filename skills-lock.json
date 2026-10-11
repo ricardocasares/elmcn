@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "elm-patterns": {
+      "source": "ricardocasares/skills",
+      "sourceType": "github",
+      "skillPath": "skills/elm/elm-patterns/SKILL.md",
+      "computedHash": "d16a087b26f082ab8968ca7a34f46fe6d1a114fe98b2ca6a1c3258a3f39b8529"
+    }
+  }
+}
