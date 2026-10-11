@@ -181,10 +181,10 @@ and friends.
 ## Development
 
 ```sh
-npm install
-npm run build          # docs site → dist/ (open dist/index.html)
-npm run check          # elm-format, registry schema, registry ↔ source consistency
-npm run test:install   # install every item into a fresh Elm app and compile it
+bun install
+bun run build          # docs site → dist/ (open dist/index.html)
+bun run check          # elm-format, registry schema, registry ↔ source consistency
+bun run test:install   # install every item into a fresh Elm app and compile it
 ```
 
 The registry is `registry.json` at the repository root. The shadcn CLI reads it, and

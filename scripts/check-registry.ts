@@ -5,18 +5,28 @@
 // - every `import UI.X` is covered by a registryDependency
 // - meta.elmDependencies lists every Elm package the item (and its dependencies) import
 //
-// Usage: node scripts/check-registry.mjs
+// Usage: bun scripts/check-registry.ts
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
+
+type File = { path: string; target: string };
+type Item = {
+  name: string;
+  files: File[];
+  docs?: string;
+  registryDependencies?: string[];
+  meta?: { elmDependencies?: string[] };
+};
+type Registry = { items: Item[] };
 
 const REPO = "ricardocasares/elmcn/";
-const PACKAGES = { Html: "elm/html", Svg: "elm/svg", Json: "elm/json", Browser: "elm/browser" };
+const PACKAGES: Record<string, string> = { Html: "elm/html", Svg: "elm/svg", Json: "elm/json", Browser: "elm/browser" };
 
-const registry = JSON.parse(readFileSync("registry.json", "utf8"));
+const registry: Registry = await Bun.file("registry.json").json();
 const items = new Map(registry.items.map((item) => [item.name, item]));
-const errors = [];
+const errors: string[] = [];
 
-const moduleOwner = new Map();
+const moduleOwner = new Map<string, string>();
 for (const item of registry.items) {
   for (const file of item.files) {
     if (file.target !== `~/${file.path}`) {
@@ -38,22 +48,30 @@ for (const file of readdirSync("src/UI")) {
   if (!moduleOwner.has(module)) errors.push(`${module} is not in any registry item`);
 }
 
-const dependencyNames = (item) =>
+const dependencyNames = (item: Item): string[] =>
   (item.registryDependencies ?? []).map((dependency) => {
     const name = dependency.replace(REPO, "");
     if (!items.has(name)) errors.push(`${item.name}: unknown registryDependency ${dependency}`);
     return name;
   });
 
-const imports = (item) =>
+const sources = new Map<string, string>();
+await Promise.all(
+  registry.items
+    .flatMap((item) => item.files)
+    .filter((file) => file.path.endsWith(".elm"))
+    .map(async (file) => sources.set(file.path, await Bun.file(file.path).text()))
+);
+
+const imports = (item: Item): string[] =>
   item.files
     .filter((file) => file.path.endsWith(".elm"))
-    .flatMap((file) => [...readFileSync(file.path, "utf8").matchAll(/^import\s+([\w.]+)/gm)].map((m) => m[1]));
+    .flatMap((file) => [...sources.get(file.path)!.matchAll(/^import\s+([\w.]+)/gm)].map((m) => m[1]));
 
-const packagesOf = (name, seen = new Set()) => {
-  if (seen.has(name) || !items.has(name)) return new Set();
-  seen.add(name);
+const packagesOf = (name: string, seen = new Set<string>()): Set<string> => {
   const item = items.get(name);
+  if (seen.has(name) || !item) return new Set();
+  seen.add(name);
   const packages = new Set(
     imports(item)
       .map((module) => PACKAGES[module.split(".")[0]])

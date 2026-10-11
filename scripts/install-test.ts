@@ -6,35 +6,46 @@
 // rebuilt into a temp folder with those rewritten to local files. Nothing is fetched
 // from GitHub, so this tests the working tree, not what is pushed.
 //
-// Usage: node scripts/install-test.mjs [item ...]
+// Usage: bun scripts/install-test.ts [item ...]
 
-import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { $ } from "bun";
+import { mkdirSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+type Item = {
+  name: string;
+  files: { target: string }[];
+  registryDependencies?: string[];
+  meta?: { elmDependencies?: string[] };
+};
+type Registry = { items: Item[] };
+type ElmJson = {
+  "elm-version": string;
+  dependencies: { direct: Record<string, string>; indirect: Record<string, string> };
+};
+
 const REPO = "ricardocasares/elmcn/";
 const root = resolve(".");
-const bin = (name) => join(root, "node_modules", ".bin", name);
-const run = (command, args, cwd) => execFileSync(command, args, { cwd, stdio: "pipe", encoding: "utf8" });
+const bin = (name: string): string => join(root, "node_modules", ".bin", name);
 
 const temp = mkdtempSync(join(tmpdir(), "elmcn-install-"));
 const output = join(temp, "r");
 
-const registry = JSON.parse(readFileSync("registry.json", "utf8"));
+const registry: Registry = await Bun.file("registry.json").json();
 for (const item of registry.items) {
   item.registryDependencies = item.registryDependencies?.map((dependency) =>
     join(output, `${dependency.replace(REPO, "")}.json`)
   );
 }
-writeFileSync(join(temp, "registry.json"), JSON.stringify(registry));
-run(bin("shadcn"), ["build", join(temp, "registry.json"), "--output", output, "--cwd", root], root);
+await Bun.write(join(temp, "registry.json"), JSON.stringify(registry));
+await $`${bin("shadcn")} build ${join(temp, "registry.json")} --output ${output} --cwd ${root}`.cwd(root).quiet();
 
-const project = JSON.parse(readFileSync("elm.json", "utf8"));
+const project: ElmJson = await Bun.file("elm.json").json();
 const versions = { ...project.dependencies.direct, ...project.dependencies.indirect };
-const pick = (names) => Object.fromEntries(names.map((name) => [name, versions[name]]));
+const pick = (names: string[]): Record<string, string> => Object.fromEntries(names.map((name) => [name, versions[name]]));
 
-const only = process.argv.slice(2);
+const only = Bun.argv.slice(2);
 const items = registry.items.filter((item) => only.length === 0 || only.includes(item.name));
 let failures = 0;
 
@@ -42,7 +53,7 @@ for (const item of items) {
   const app = join(temp, "apps", item.name);
   mkdirSync(join(app, "src"), { recursive: true });
   const packages = new Set(["elm/browser", "elm/core", "elm/html", ...(item.meta?.elmDependencies ?? [])]);
-  writeFileSync(
+  await Bun.write(
     join(app, "elm.json"),
     JSON.stringify({
       type: "application",
@@ -57,16 +68,17 @@ for (const item of items) {
   );
 
   try {
-    run(bin("shadcn"), ["add", join(output, `${item.name}.json`), "--yes", "--silent", "--cwd", app], app);
+    await $`${bin("shadcn")} add ${join(output, `${item.name}.json`)} --yes --silent --cwd ${app}`.cwd(app).quiet();
     for (const file of item.files) {
       const installed = join(app, file.target.replace("~/", ""));
-      if (!existsSync(installed)) throw new Error(`${file.target} was not installed`);
-      if (installed.endsWith(".elm")) run(bin("elm"), ["make", installed, "--output=/dev/null"], app);
+      if (!(await Bun.file(installed).exists())) throw new Error(`${file.target} was not installed`);
+      if (installed.endsWith(".elm")) await $`${bin("elm")} make ${installed} --output=/dev/null`.cwd(app).quiet();
     }
     console.log(`✔ ${item.name}`);
   } catch (error) {
     failures += 1;
-    console.error(`✗ ${item.name}\n${error.stdout ?? ""}${error.stderr ?? error.message}`);
+    const shell = error as { stdout?: Buffer; stderr?: Buffer; message?: string };
+    console.error(`✗ ${item.name}\n${shell.stdout?.toString() ?? ""}${shell.stderr?.toString() ?? shell.message}`);
   }
 }
 
