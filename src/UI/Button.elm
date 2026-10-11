@@ -9,7 +9,7 @@ module UI.Button exposing
     , toHtml, toAnchor, toAttributes
     )
 
-{-| Displays a button or a component that looks like a button.
+{-| Displays a button, a link that looks like a button, or the button styles for another element.
 
 A button is built with `new`, given its content, adjusted with setters, and rendered with `toHtml`:
 
@@ -31,7 +31,9 @@ Every button needs content. `toHtml` won't accept a button until it has a `text`
         |> Button.outline
         |> Button.toHtml []
 
-The button has `type="button"`, so it doesn't submit forms unless you pass `type_ "submit"` to `toHtml`.
+A button that navigates is rendered with [`toAnchor`](#toAnchor) instead, see [Rendering](#rendering).
+
+`toHtml` sets `type="button"`, so the button doesn't submit forms unless you pass `type_ "submit"`.
 
 @docs Button, Text, Icon, Ready, NeedsContent, NeedsLabel
 
@@ -47,6 +49,8 @@ The button has `type="button"`, so it doesn't submit forms unless you pass `type
 
 
 # Setters
+
+Variants, sizes and shape can be applied before or after the content. `startIcon` and `endIcon` need a `text` button, so they come after it.
 
 @docs startIcon, endIcon
 
@@ -66,6 +70,8 @@ Icon-only buttons are square versions of the same sizes. When several sizes are 
 
 
 ## Shape
+
+The default shape has rounded corners that scale with the size.
 
 @docs rounded
 
@@ -370,7 +376,7 @@ large =
     size Large
 
 
-{-| A pill shape, for any size.
+{-| A pill shape, for any size. Replaces the default corner radius, so no class override is needed.
 -}
 rounded : Button shape status msg -> Button shape status msg
 rounded (Button config) =

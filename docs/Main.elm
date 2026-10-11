@@ -390,8 +390,10 @@ viewHome =
             , shellBlock "npx shadcn@latest add ricardocasares/elmcn/button ricardocasares/elmcn/card"
             ]
         , section "Conventions"
-            [ prose [ text "Every component takes a List (Attribute msg) like elm/html, and attributes you pass come after the component's own, so they override them. Components with variants or sizes take a list of options first. An empty list gives the defaults, and the last option of a kind wins." ]
-            , elmBlock "Button.new |> Button.text \"Default\" |> Button.toHtml []\nButton.new |> Button.text \"Delete\" |> Button.destructive |> Button.large |> Button.toHtml []"
+            [ prose [ text "Every component takes a List (Attribute msg) like elm/html, and attributes you pass come after the component's own, so they override them. Simple components with variants take a list of options first. An empty list gives the defaults, and the last option of a kind wins." ]
+            , elmBlock "Badge.view [] [] [ text \"New\" ]\nBadge.view [ Badge.outline ] [] [ text \"Draft\" ]"
+            , prose [ text "Button and Alert are builders. Start with new, add content, pipe through setters, and render at the end. The compiler won't let you render until the required content is there." ]
+            , elmBlock "Button.new |> Button.text \"Delete\" |> Button.destructive |> Button.large |> Button.toHtml []\nButton.new |> Button.icon trashIcon |> Button.label \"Delete\" |> Button.toHtml [ onClick Delete ]"
             ]
         , section "Components"
             [ div [ class "grid gap-4 sm:grid-cols-2" ]

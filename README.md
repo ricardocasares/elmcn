@@ -8,7 +8,8 @@ project, and from then on the code is yours to read and change.
 ```elm
 import UI.Button as Button
 
-Button.new |> Button.text "Save"
+Button.new
+    |> Button.text "Save"
     |> Button.outline
     |> Button.small
     |> Button.toHtml [ onClick Save ]
@@ -82,17 +83,24 @@ Radio Group and Native Select are styled native inputs, so `checked`, `onCheck`,
 (`type_`, `role`, …). Parts of compound components are functions in the same module:
 `Card.header`, `Card.title`, `Table.row`, and so on.
 
-**Options come first.** Components with variants or sizes take a list of options
-before the attributes. An empty list gives the defaults, and the last option of a kind wins:
+**Options come first.** Simple components with variants take a list of options before
+the attributes. An empty list gives the defaults, and the last option of a kind wins:
 
 ```elm
-Button.new |> Button.text "Default" |> Button.toHtml []
-Button.new |> Button.text "Delete" |> Button.destructive |> Button.large |> Button.toHtml []
+Badge.view [] [] [ text "New" ]
+Badge.view [ Badge.outline ] [] [ text "Draft" ]
 ```
 
-**Button is a builder.** `Button.new` starts it, `Button.text` gives it a label, or `Button.icon` an icon
-and `toHtml` won't compile until `Button.label` gives that an accessible name. Variants, sizes,
-`startIcon` and `endIcon` are setters, and `toHtml` takes the attributes and renders the result.
+**Button and Alert are builders.** Start with `new`, add content, pipe through setters,
+and render at the end. The compiler won't let you render until the required content is
+there: a button needs `text`, or `icon` and an accessible `label`; an alert needs `title`.
+Variants, sizes, `rounded`, `startIcon` and `endIcon` are setters, and the renderer
+takes the attributes:
+
+```elm
+Button.new |> Button.text "Delete" |> Button.destructive |> Button.large |> Button.toHtml []
+Button.new |> Button.icon trashIcon |> Button.label "Delete" |> Button.toHtml [ onClick Delete ]
+```
 
 **Buttons as links.** `Button.toAnchor` renders an `<a>` with the same content and setters
 as `toHtml`, the equivalent of shadcn's `asChild` on an anchor:
@@ -116,7 +124,11 @@ padding on that side. They use logical properties, so they are also correct in
 right-to-left layouts:
 
 ```elm
-Button.new |> Button.text "Done" |> Button.outline |> Button.startIcon (Phosphor.check Regular |> Phosphor.toHtml []) |> Button.toHtml []
+Button.new
+    |> Button.text "Done"
+    |> Button.outline
+    |> Button.startIcon (Phosphor.check Regular |> Phosphor.toHtml [])
+    |> Button.toHtml []
 ```
 
 **Pointer cursor.** Tailwind v4 buttons use the default cursor. To get a pointer, add
@@ -135,8 +147,8 @@ this to your stylesheet:
 `rounded-full` replaces `rounded-md`. Elm has no equivalent: both classes end up on the
 element, and Tailwind's own CSS order decides which one applies, not the order you
 wrote them in. Adding classes that don't conflict works as you'd expect. To override a
-class the component already sets, use Tailwind's important modifier, or edit the
-component:
+class the component already sets, prefer a setter when there is one (`Button.rounded`);
+otherwise use Tailwind's important modifier, or edit the component:
 
 ```elm
 Skeleton.view [ class "size-12 rounded-full!" ]
