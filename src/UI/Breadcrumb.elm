@@ -100,8 +100,8 @@ ellipsis attrs =
          ]
             ++ attrs
         )
-        [ Html.span [ class "size-1 rounded-full bg-current" ] []
-        , Html.span [ class "size-1 rounded-full bg-current" ] []
-        , Html.span [ class "size-1 rounded-full bg-current" ] []
+        [ Html.span [ class "size-[2.5px] rounded-full bg-current" ] []
+        , Html.span [ class "size-[2.5px] rounded-full bg-current" ] []
+        , Html.span [ class "size-[2.5px] rounded-full bg-current" ] []
         , Html.span [ class "sr-only" ] [ Html.text "More" ]
         ]
