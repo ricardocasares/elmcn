@@ -1,6 +1,6 @@
 module Examples.Button exposing (..)
 
-import Html exposing (Html, a, div, text)
+import Html exposing (Html, div)
 import Html.Attributes exposing (class, dir, disabled, href)
 import Phosphor exposing (IconWeight(..))
 import Svg.Attributes

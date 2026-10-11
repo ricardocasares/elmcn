@@ -94,11 +94,11 @@ Separator.view [] []
 Separator.view [ Separator.vertical ] []
 ```
 
-**Components with content are builders.** Button, Badge, Alert, Avatar, Card, Empty, Kbd, Pagination and Select start
+**Components with content are builders.** Button, Badge, Alert, Avatar, Card, Empty, Kbd and Select start
 with `new`, add content, pipe through setters, and render at the end. The compiler won't
 let you render until the required content is there: a button needs `text`, or `icon` and
 an accessible `label`; a badge needs `text`; an alert needs `title`; an avatar needs
-`fallback`; a shortcut needs a `key`; a select needs an `id` and an `onSelect` handler; a pagination needs at least one item. Variants, sizes, `rounded`, `startIcon` and
+`fallback`; a shortcut needs a `key`; a select needs an `id` and an `onSelect` handler. Variants, sizes, `rounded`, `startIcon` and
 `endIcon` are setters, and the renderer takes the attributes:
 
 ```elm

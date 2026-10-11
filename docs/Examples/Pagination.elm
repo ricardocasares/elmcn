@@ -10,27 +10,27 @@ import UI.Select as Select
 
 demo : Html msg
 demo =
-    Pagination.new
-        |> Pagination.previous [ href "#" ] [ text "Prev" ]
-        |> Pagination.link [ href "#" ] [ text "1" ]
-        |> Pagination.link [ href "#" ] [ text "2" ]
-        |> Pagination.activeLink [ href "#" ] [ text "3" ]
-        |> Pagination.ellipsis 
-        |> Pagination.next [ href "#" ] [ text "Next" ]
-        |> Pagination.toHtml []
+    Pagination.view []
+        [ Pagination.previous [ href "#" ] [ text "Prev" ]
+        , Pagination.link [ href "#" ] [ text "1" ]
+        , Pagination.link [ href "#" ] [ text "2" ]
+        , Pagination.activeLink [ href "#" ] [ text "3" ]
+        , Pagination.ellipsis
+        , Pagination.next [ href "#" ] [ text "Next" ]
+        ]
 
 
 {-| Page links alone, without previous and next.
 -}
 simple : Html msg
 simple =
-    Pagination.new
-        |> Pagination.link [ href "#" ] [ text "1" ]
-        |> Pagination.activeLink [ href "#" ] [ text "2" ]
-        |> Pagination.link [ href "#" ] [ text "3" ]
-        |> Pagination.link [ href "#" ] [ text "4" ]
-        |> Pagination.link [ href "#" ] [ text "5" ]
-        |> Pagination.toHtml []
+    Pagination.view []
+        [ Pagination.link [ href "#" ] [ text "1" ]
+        , Pagination.activeLink [ href "#" ] [ text "2" ]
+        , Pagination.link [ href "#" ] [ text "3" ]
+        , Pagination.link [ href "#" ] [ text "4" ]
+        , Pagination.link [ href "#" ] [ text "5" ]
+        ]
 
 
 {-| Previous and next beside a rows-per-page select. The `mx-0 w-auto` classes stop the pagination from filling the row.
@@ -52,8 +52,8 @@ withSelect state =
                     ]
                 |> Select.toHtml [ class "w-20" ]
             ]
-        , Pagination.new
-            |> Pagination.previous [ href "#" ] []
-            |> Pagination.next [ href "#" ] []
-            |> Pagination.toHtml [ class "mx-0 w-auto" ]
+        , Pagination.view [ class "mx-0 w-auto" ]
+            [ Pagination.previous [ href "#" ] []
+            , Pagination.next [ href "#" ] []
+            ]
         ]

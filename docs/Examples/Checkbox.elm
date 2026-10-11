@@ -1,7 +1,7 @@
 module Examples.Checkbox exposing (..)
 
-import Html exposing (Html, div, text)
-import Html.Attributes exposing (checked, class, disabled)
+import Html exposing (Html, text)
+import Html.Attributes exposing (checked, disabled)
 import UI.Checkbox as Checkbox
 import UI.Label as Label
 
