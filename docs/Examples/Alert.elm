@@ -32,5 +32,5 @@ withAction =
         [ class "max-w-md" ]
         [ Alert.title [] [ text "Dark mode is now available" ]
         , Alert.description [] [ text "Enable it under your profile settings." ]
-        , Alert.action [] [ Button.view [ Button.outline ] [] [ text "Enable" ] ]
+        , Alert.action [] [ Button.view [ Button.extraSmall ] [] [ text "Enable" ] ]
         ]
