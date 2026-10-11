@@ -21,7 +21,7 @@ applyTheme();
 
 const app = Elm.Main.init({
   node: document.getElementById("app"),
-  flags: { theme, systemDark: media.matches },
+  flags: { base: import.meta.env.BASE_URL, theme, systemDark: media.matches },
 });
 
 app.ports.saveTheme.subscribe((value: string) => {

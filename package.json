@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "bun run docs:gen && vite build",
+    "build": "bun run docs:gen && vite build && cp dist/index.html dist/404.html",
     "preview": "vite preview",
     "docs:gen": "bun scripts/gen-docs.ts",
     "format": "elm-format src docs --yes",

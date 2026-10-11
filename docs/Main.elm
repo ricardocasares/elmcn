@@ -39,6 +39,7 @@ main =
 
 type alias Model =
     { key : Nav.Key
+    , base : String
     , route : Route
     , theme : Theme
     , systemDark : Bool
@@ -79,17 +80,45 @@ themeFromString value =
             System
 
 
-{-| Flags are `{ theme : string | null, systemDark : boolean }`; anything malformed falls back to System, light.
+{-| Flags are `{ base : string, theme : string | null, systemDark : boolean }`. `base` is the path the site is served
+from, "/elmcn/" on GitHub Pages. Anything malformed falls back to "/", System, light.
 -}
-flagsDecoder : Decode.Decoder ( Theme, Bool )
+flagsDecoder : Decode.Decoder Flags
 flagsDecoder =
-    Decode.map2 Tuple.pair
+    Decode.map3 Flags
+        (Decode.oneOf [ Decode.field "base" Decode.string |> Decode.map normalizeBase, Decode.succeed "/" ])
         (Decode.oneOf
             [ Decode.field "theme" Decode.string |> Decode.map themeFromString
             , Decode.succeed System
             ]
         )
         (Decode.oneOf [ Decode.field "systemDark" Decode.bool, Decode.succeed False ])
+
+
+type alias Flags =
+    { base : String
+    , theme : Theme
+    , systemDark : Bool
+    }
+
+
+{-| Always starts and ends with a slash.
+-}
+normalizeBase : String -> String
+normalizeBase base =
+    let
+        withStart =
+            if String.startsWith "/" base then
+                base
+
+            else
+                "/" ++ base
+    in
+    if String.endsWith "/" withStart then
+        withStart
+
+    else
+        withStart ++ "/"
 
 
 isDark : Model -> Bool
@@ -120,22 +149,32 @@ type Route
 init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
-        ( theme, systemDark ) =
+        { base, theme, systemDark } =
             Decode.decodeValue flagsDecoder flags
-                |> Result.withDefault ( System, False )
+                |> Result.withDefault { base = "/", theme = System, systemDark = False }
     in
-    ( { key = key, route = routeFromUrl url, theme = theme, systemDark = systemDark, codeShown = Set.empty, state = State.init }
+    ( { key = key, base = base, route = routeFromUrl base url, theme = theme, systemDark = systemDark, codeShown = Set.empty, state = State.init }
     , Cmd.none
     )
 
 
-routeFromUrl : Url -> Route
-routeFromUrl url =
-    case url.fragment |> Maybe.withDefault "" |> String.dropLeft 1 of
+{-| GitHub Pages serves 404.html, a copy of index.html, for paths it has no file for, so deep links reach this too.
+-}
+routeFromUrl : String -> Url -> Route
+routeFromUrl base url =
+    let
+        slug =
+            url.path
+                |> String.dropLeft (String.length base)
+                |> String.split "/"
+                |> List.head
+                |> Maybe.withDefault ""
+    in
+    case slug of
         "" ->
             Home
 
-        slug ->
+        _ ->
             Generated.components
                 |> List.filter (\c -> c.slug == slug)
                 |> List.head
@@ -168,12 +207,12 @@ update msg model =
             ( model, Nav.load url )
 
         UrlChanged url ->
-            ( { model | route = routeFromUrl url }
+            ( { model | route = routeFromUrl model.base url }
             , Task.perform (\_ -> Scrolled) (Browser.Dom.setViewport 0 0)
             )
 
         PageSelected slug ->
-            ( model, Nav.pushUrl model.key ("#/" ++ slug) )
+            ( model, Nav.pushUrl model.key (model.base ++ slug) )
 
         ThemeSelected theme ->
             ( { model | theme = theme }, saveTheme (themeToString theme) )
@@ -226,18 +265,18 @@ view model =
             [ div [ class "min-h-screen bg-background text-foreground" ]
                 [ viewHeader model
                 , div [ class "mx-auto flex max-w-6xl gap-10 px-6" ]
-                    [ viewSidebar model.route
+                    [ viewSidebar model.base model.route
                     , main_ [ class "min-w-0 max-w-3xl flex-1 py-10" ]
                         [ viewMobileNav model.route
                         , case model.route of
                             Home ->
-                                viewHome
+                                viewHome model.base
 
                             ComponentPage component ->
                                 viewComponent model component
 
                             NotFound ->
-                                viewNotFound
+                                viewNotFound model.base
                         ]
                     ]
                 ]
@@ -250,7 +289,7 @@ viewHeader : Model -> Html Msg
 viewHeader model =
     header [ class "sticky top-0 z-10 border-b bg-background/95 backdrop-blur" ]
         [ div [ class "mx-auto flex h-14 max-w-6xl items-center justify-between px-6" ]
-            [ a [ href "#/", class "text-lg font-semibold tracking-tight" ] [ text "elmcn" ]
+            [ a [ href model.base, class "text-lg font-semibold tracking-tight" ] [ text "elmcn" ]
             , div [ class "flex items-center gap-2" ]
                 [ Button.new
                     |> Button.icon (Phosphor.githubLogo Regular |> Phosphor.toHtml [])
@@ -297,19 +336,19 @@ viewThemeSwitcher current =
         ]
 
 
-viewSidebar : Route -> Html Msg
-viewSidebar route =
+viewSidebar : String -> Route -> Html Msg
+viewSidebar base route =
     aside [ class "sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 overflow-y-auto py-10 md:block" ]
         [ nav [ class "flex flex-col gap-6" ]
             [ div [ class "flex flex-col gap-1" ]
                 [ sidebarHeading "Getting started"
-                , sidebarLink (route == Home) "#/" "Introduction"
+                , sidebarLink (route == Home) base "Introduction"
                 ]
             , div [ class "flex flex-col gap-1" ]
                 (sidebarHeading "Components"
                     :: List.map
                         (\c ->
-                            sidebarLink (isCurrent route c) ("#/" ++ c.slug) c.title
+                            sidebarLink (isCurrent route c) (base ++ c.slug) c.title
                         )
                         Generated.components
                 )
@@ -374,8 +413,8 @@ viewMobileNav route =
 -- PAGES
 
 
-viewHome : Html Msg
-viewHome =
+viewHome : String -> Html Msg
+viewHome base =
     div [ class "flex flex-col gap-10" ]
         [ pageHeader "Introduction" "shadcn/ui components for Elm, installed with the shadcn CLI."
         , prose
@@ -404,14 +443,14 @@ viewHome =
             ]
         , section "Components"
             [ div [ class "grid gap-4 sm:grid-cols-2" ]
-                (List.map componentCard Generated.components)
+                (List.map (componentCard base) Generated.components)
             ]
         ]
 
 
-componentCard : Component -> Html msg
-componentCard component =
-    a [ href ("#/" ++ component.slug), class "block" ]
+componentCard : String -> Component -> Html msg
+componentCard base component =
+    a [ href (base ++ component.slug), class "block" ]
         [ Card.new
             |> Card.title [ text component.title ]
             |> Card.description [ text component.description ]
@@ -419,14 +458,14 @@ componentCard component =
         ]
 
 
-viewNotFound : Html msg
-viewNotFound =
+viewNotFound : String -> Html msg
+viewNotFound base =
     div [ class "flex flex-col gap-4" ]
         [ pageHeader "Not found" "There is no page here."
         , Button.new
             |> Button.text "Back to the introduction"
             |> Button.outline
-            |> Button.toAnchor [ href "#/" ]
+            |> Button.toAnchor [ href base ]
         ]
 
 
