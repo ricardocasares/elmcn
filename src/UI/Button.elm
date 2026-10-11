@@ -253,7 +253,7 @@ ariaLabel : Content msg -> List (Attribute msg)
 ariaLabel content =
     case content of
         Glyph { name } ->
-            [ attribute "aria-label" name ]
+            [ attribute "aria-label" name, attribute "title" name ]
 
         _ ->
             []
