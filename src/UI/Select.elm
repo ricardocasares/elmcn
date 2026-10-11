@@ -335,8 +335,11 @@ toHtml attrs (Select config) =
 
             -- Picking an item hides the popover and changes the placement in the same
             -- frame, so the placement waits until the exit transition is over, or the
-            -- list would jump while fading out.
-            , class "[transition:opacity_100ms,scale_100ms,display_100ms_allow-discrete,overlay_100ms_allow-discrete,top_0s_100ms_allow-discrete,bottom_0s_100ms_allow-discrete,height_0s_100ms_allow-discrete,max-height_0s_100ms_allow-discrete,min-height_0s_100ms_allow-discrete,margin_0s_100ms_allow-discrete,position-area_0s_100ms_allow-discrete,position-try-fallbacks_0s_100ms_allow-discrete,scroll-snap-type_0s_var(--snap-delay)_allow-discrete]"
+            -- list would jump while fading out. The wait is only on the way out: Safari
+            -- transitions from the last rendered placement when the popover opens, and
+            -- would hold it there before jumping to the new one.
+            , class "[transition:opacity_100ms,scale_100ms,display_100ms_allow-discrete,overlay_100ms_allow-discrete,top_0s_var(--placement-delay)_allow-discrete,bottom_0s_var(--placement-delay)_allow-discrete,height_0s_var(--placement-delay)_allow-discrete,max-height_0s_var(--placement-delay)_allow-discrete,min-height_0s_var(--placement-delay)_allow-discrete,margin_0s_var(--placement-delay)_allow-discrete,position-area_0s_var(--placement-delay)_allow-discrete,position-try-fallbacks_0s_var(--placement-delay)_allow-discrete,scroll-snap-type_0s_var(--snap-delay)_allow-discrete]"
+            , class "[--placement-delay:100ms] open:[--placement-delay:0s]"
 
             -- A popover keeps its scroll offset while closed, and the placement expects
             -- the list scrolled to the top. Snapping to the first section while closed
