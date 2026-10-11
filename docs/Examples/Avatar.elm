@@ -23,8 +23,12 @@ demo =
                 |> Avatar.fallback [ text "CN" ]
                 |> Avatar.img [ src "https://github.com/shadcn.png", alt "@shadcn" ]
             )
-            [ Avatar.new |> Avatar.fallback [ text "LR" ] |> Avatar.img [ src "https://github.com/maxleiter.png", alt "@maxleiter" ]
-            , Avatar.new |> Avatar.fallback [ text "ER" ] |> Avatar.img [ src "https://github.com/evilrabbit.png", alt "@evilrabbit" ]
+            [ Avatar.new
+                |> Avatar.fallback [ text "LR" ]
+                |> Avatar.img [ src "https://github.com/maxleiter.png", alt "@maxleiter" ]
+            , Avatar.new
+                |> Avatar.fallback [ text "ER" ]
+                |> Avatar.img [ src "https://github.com/evilrabbit.png", alt "@evilrabbit" ]
             ]
             |> Avatar.groupCount [ text "+3" ]
             |> Avatar.toHtml [ class "grayscale" ]

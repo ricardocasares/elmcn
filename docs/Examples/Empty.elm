@@ -17,8 +17,13 @@ demo =
             ]
         , Empty.content []
             [ div [ class "flex gap-2" ]
-                [ Button.new |> Button.text "Create project" |> Button.toHtml []
-                , Button.new |> Button.text "Import project" |> Button.outline |> Button.toHtml []
+                [ Button.new
+                    |> Button.text "Create project"
+                    |> Button.toHtml []
+                , Button.new
+                    |> Button.text "Import project"
+                    |> Button.outline
+                    |> Button.toHtml []
                 ]
             ]
         ]

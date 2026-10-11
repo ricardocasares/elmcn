@@ -392,9 +392,9 @@ viewHome =
             ]
         , section "Conventions"
             [ prose [ text "Every component takes a List (Attribute msg) like elm/html, and attributes you pass come after the component's own, so they override them. Simple components with variants take a list of options first. An empty list gives the defaults, and the last option of a kind wins." ]
-            , elmBlock "Badge.view [] [] [ text \"New\" ]\nBadge.view [ Badge.outline ] [] [ text \"Draft\" ]"
-            , prose [ text "Button and Alert are builders. Start with new, add content, pipe through setters, and render at the end. The compiler won't let you render until the required content is there." ]
-            , elmBlock "Button.new |> Button.text \"Delete\" |> Button.destructive |> Button.large |> Button.toHtml []\nButton.new |> Button.icon trashIcon |> Button.label \"Delete\" |> Button.toHtml [ onClick Delete ]"
+            , elmBlock "Separator.view [] []\nSeparator.view [ Separator.vertical ] []"
+            , prose [ text "Components with content, such as Button, Badge, Alert and Avatar, are builders. Start with new, add content, pipe through setters, and render at the end. The compiler won't let you render until the required content is there." ]
+            , elmBlock "Button.new\n    |> Button.text \"Delete\"\n    |> Button.destructive\n    |> Button.large\n    |> Button.toHtml []\n\nButton.new\n    |> Button.icon trashIcon\n    |> Button.label \"Delete\"\n    |> Button.toHtml [ onClick Delete ]"
             ]
         , section "Components"
             [ div [ class "grid gap-4 sm:grid-cols-2" ]
@@ -420,7 +420,10 @@ viewNotFound : Html msg
 viewNotFound =
     div [ class "flex flex-col gap-4" ]
         [ pageHeader "Not found" "There is no page here."
-        , Button.new |> Button.text "Back to the introduction" |> Button.outline |> Button.toAnchor [ href "#/" ]
+        , Button.new
+            |> Button.text "Back to the introduction"
+            |> Button.outline
+            |> Button.toAnchor [ href "#/" ]
         ]
 
 

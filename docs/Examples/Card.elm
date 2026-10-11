@@ -15,7 +15,12 @@ demo =
         [ Card.header []
             [ Card.title [] [ text "Login to your account" ]
             , Card.description [] [ text "Enter your email below to login to your account" ]
-            , Card.action [] [ Button.new |> Button.text "Sign Up" |> Button.link |> Button.toHtml [] ]
+            , Card.action []
+                [ Button.new
+                    |> Button.text "Sign Up"
+                    |> Button.link
+                    |> Button.toHtml []
+                ]
             ]
         , Card.content []
             [ div [ class "flex flex-col gap-6" ]
@@ -30,8 +35,13 @@ demo =
                 ]
             ]
         , Card.footer [ class "flex-col gap-2" ]
-            [ Button.new |> Button.text "Login" |> Button.toHtml [ class "w-full" ]
-            , Button.new |> Button.text "Login with Google" |> Button.outline |> Button.toHtml [ class "w-full" ]
+            [ Button.new
+                |> Button.text "Login"
+                |> Button.toHtml [ class "w-full" ]
+            , Button.new
+                |> Button.text "Login with Google"
+                |> Button.outline
+                |> Button.toHtml [ class "w-full" ]
             ]
         ]
 
@@ -45,5 +55,9 @@ simple =
             , Card.description [] [ text "You have 3 unread messages." ]
             ]
         , Card.content [] [ text "Your inbox is waiting." ]
-        , Card.footer [] [ Button.new |> Button.text "Mark all as read" |> Button.toHtml [ class "w-full" ] ]
+        , Card.footer []
+            [ Button.new
+                |> Button.text "Mark all as read"
+                |> Button.toHtml [ class "w-full" ]
+            ]
         ]

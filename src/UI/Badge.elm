@@ -1,26 +1,87 @@
 module UI.Badge exposing
-    ( view, attributes
-    , Option, secondary, destructive, outline, ghost, link
+    ( Badge, Ready, NeedsText
+    , new
+    , text
+    , startIcon, endIcon
+    , secondary, destructive, outline, ghost, link
+    , toHtml, toAnchor, toAttributes
     )
 
 {-| Displays a badge or a component that looks like a badge.
 
-    Badge.view [] [] [ text "New" ]
+A badge is built with `new`, given its text, adjusted with setters, and rendered with `toHtml`:
 
-    Badge.view [ Badge.outline ] [] [ text "Draft" ]
+    Badge.new
+        |> Badge.text "New"
+        |> Badge.toHtml []
 
-Use `attributes` to style a link as a badge; links also get a hover state:
+    Badge.new
+        |> Badge.text "Draft"
+        |> Badge.outline
+        |> Badge.toHtml []
 
-    a (href "/inbox" :: Badge.attributes [ Badge.secondary ]) [ text "12 unread" ]
+Every badge needs text. `toHtml` won't accept a badge until it has it:
 
-@docs view, attributes
+    Badge.new
+        |> Badge.secondary
+        |> Badge.toHtml []
+        -- compile error: the badge is still `NeedsText`
+
+Icons go before or after the text, and the padding is adjusted for them:
+
+    Badge.new
+        |> Badge.text "Verified"
+        |> Badge.secondary
+        |> Badge.startIcon (Phosphor.sealCheck Regular |> Phosphor.toHtml [])
+        |> Badge.toHtml []
+
+@docs Badge, Ready, NeedsText
 
 
-# Variants
+# Constructor
 
-The default variant is a solid primary badge.
+@docs new
 
-@docs Option, secondary, destructive, outline, ghost, link
+
+# Content
+
+@docs text
+
+
+# Setters
+
+Variants can be applied before or after the text. `startIcon` and `endIcon` need the text, so they come after it.
+
+@docs startIcon, endIcon
+
+
+## Variants
+
+The default variant is a solid primary badge. When several variants are given, the last one wins.
+
+@docs secondary, destructive, outline, ghost, link
+
+
+# Rendering
+
+@docs toHtml, toAnchor, toAttributes
+
+A badge that navigates is rendered as a link with `toAnchor`. Links also get a hover state:
+
+    Badge.new
+        |> Badge.text "12 unread"
+        |> Badge.secondary
+        |> Badge.toAnchor [ href "/inbox" ]
+
+For any other element, `toAttributes` gives the styles alone. It accepts a badge without text:
+
+    span
+        (Badge.toAttributes
+            (Badge.new
+                |> Badge.outline
+            )
+        )
+        [ text "Not a badge" ]
 
 -}
 
@@ -28,32 +89,30 @@ import Html exposing (Attribute, Html)
 import Html.Attributes exposing (attribute, class)
 
 
-{-| Renders a `<span>`.
+{-| A badge being built.
+
+`status` is [`Ready`](#Ready) once the badge can be rendered, or [`NeedsText`](#NeedsText) while it still lacks its text.
+
 -}
-view : List Option -> List (Attribute msg) -> List (Html msg) -> Html msg
-view options attrs children =
-    Html.span (attributes options ++ attrs) children
+type Badge status msg
+    = Badge
+        { variant : Variant
+        , text : String
+        , start : Maybe (Html msg)
+        , end : Maybe (Html msg)
+        }
 
 
-{-| The badge styles as attributes, for elements other than `<span>`.
+{-| The badge can be rendered.
 -}
-attributes : List Option -> List (Attribute msg)
-attributes options =
-    let
-        variant =
-            List.foldl (\(Variant v) _ -> v) Default options
-    in
-    [ attribute "data-slot" "badge"
-    , attribute "data-variant" (variantName variant)
-    , class "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!"
-    , class (variantClass variant)
-    ]
+type Ready
+    = Ready
 
 
-{-| A badge variant. When several are given, the last one wins.
+{-| A badge that still needs [`text`](#text) before it can be rendered.
 -}
-type Option
-    = Variant Variant
+type NeedsText
+    = NeedsText
 
 
 type Variant
@@ -65,39 +124,135 @@ type Variant
     | Link
 
 
+
+-- CONSTRUCTOR
+
+
+{-| An empty badge. Give it [`text`](#text) to make it renderable.
+-}
+new : Badge NeedsText msg
+new =
+    Badge
+        { variant = Default
+        , text = ""
+        , start = Nothing
+        , end = Nothing
+        }
+
+
+
+-- CONTENT
+
+
+{-| The text of the badge. Required.
+-}
+text : String -> Badge status msg -> Badge Ready msg
+text string (Badge config) =
+    Badge { config | text = string }
+
+
+
+-- SETTERS
+
+
+{-| An icon before the text. The padding is adjusted for it.
+-}
+startIcon : Html msg -> Badge Ready msg -> Badge Ready msg
+startIcon child (Badge config) =
+    Badge { config | start = Just child }
+
+
+{-| An icon after the text. The padding is adjusted for it.
+-}
+endIcon : Html msg -> Badge Ready msg -> Badge Ready msg
+endIcon child (Badge config) =
+    Badge { config | end = Just child }
+
+
 {-| -}
-secondary : Option
+secondary : Badge status msg -> Badge status msg
 secondary =
-    Variant Secondary
+    variant Secondary
 
 
 {-| -}
-destructive : Option
+destructive : Badge status msg -> Badge status msg
 destructive =
-    Variant Destructive
+    variant Destructive
 
 
 {-| -}
-outline : Option
+outline : Badge status msg -> Badge status msg
 outline =
-    Variant Outline
+    variant Outline
 
 
 {-| -}
-ghost : Option
+ghost : Badge status msg -> Badge status msg
 ghost =
-    Variant Ghost
+    variant Ghost
 
 
 {-| -}
-link : Option
+link : Badge status msg -> Badge status msg
 link =
-    Variant Link
+    variant Link
+
+
+variant : Variant -> Badge status msg -> Badge status msg
+variant value (Badge config) =
+    Badge { config | variant = value }
+
+
+
+-- RENDERING
+
+
+{-| Renders a `<span>` with the given attributes after the styles, so they can override them.
+-}
+toHtml : List (Attribute msg) -> Badge Ready msg -> Html msg
+toHtml =
+    render Html.span
+
+
+{-| Renders an `<a>` with the badge styles and content. Pass `href` with the attributes.
+-}
+toAnchor : List (Attribute msg) -> Badge Ready msg -> Html msg
+toAnchor =
+    render Html.a
+
+
+render : (List (Attribute msg) -> List (Html msg) -> Html msg) -> List (Attribute msg) -> Badge Ready msg -> Html msg
+render element attrs ((Badge config) as badge) =
+    element
+        (toAttributes badge ++ attrs)
+        (List.filterMap identity
+            [ Maybe.map (iconSlot "inline-start") config.start
+            , Just (Html.text config.text)
+            , Maybe.map (iconSlot "inline-end") config.end
+            ]
+        )
+
+
+iconSlot : String -> Html msg -> Html msg
+iconSlot position child =
+    Html.span [ attribute "data-icon" position, class "contents" ] [ child ]
+
+
+{-| The badge styles alone, for elements other than `<span>` and `<a>`. Any badge is accepted, including one without text.
+-}
+toAttributes : Badge status msg -> List (Attribute msg)
+toAttributes (Badge config) =
+    [ attribute "data-slot" "badge"
+    , attribute "data-variant" (variantName config.variant)
+    , class "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pe-1.5 has-data-[icon=inline-start]:ps-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:size-3!"
+    , class (variantClass config.variant)
+    ]
 
 
 variantName : Variant -> String
-variantName variant =
-    case variant of
+variantName value =
+    case value of
         Default ->
             "default"
 
@@ -118,8 +273,8 @@ variantName variant =
 
 
 variantClass : Variant -> String
-variantClass variant =
-    case variant of
+variantClass value =
+    case value of
         Default ->
             "bg-primary text-primary-foreground [a&]:hover:bg-primary/80"
 

@@ -91,7 +91,13 @@ Not to be confused with the [`link`](#link) variant, which makes a `<button>` lo
 
 For any other element, `toAttributes` gives the styles alone. It accepts a button without content:
 
-    span (Button.toAttributes (Button.new |> Button.outline)) [ text "Not a button" ]
+    span
+        (Button.toAttributes
+            (Button.new
+                |> Button.outline
+            )
+        )
+        [ text "Not a button" ]
 
 -}
 

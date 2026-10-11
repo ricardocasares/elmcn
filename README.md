@@ -87,33 +87,51 @@ Radio Group and Native Select are styled native inputs, so `checked`, `onCheck`,
 the attributes. An empty list gives the defaults, and the last option of a kind wins:
 
 ```elm
-Badge.view [] [] [ text "New" ]
-Badge.view [ Badge.outline ] [] [ text "Draft" ]
+Separator.view [] []
+Separator.view [ Separator.vertical ] []
 ```
 
-**Button and Alert are builders.** Start with `new`, add content, pipe through setters,
-and render at the end. The compiler won't let you render until the required content is
-there: a button needs `text`, or `icon` and an accessible `label`; an alert needs `title`.
-Variants, sizes, `rounded`, `startIcon` and `endIcon` are setters, and the renderer
-takes the attributes:
+**Components with content are builders.** Button, Badge, Alert, Avatar and Kbd start
+with `new`, add content, pipe through setters, and render at the end. The compiler won't
+let you render until the required content is there: a button needs `text`, or `icon` and
+an accessible `label`; a badge needs `text`; an alert needs `title`; an avatar needs
+`fallback`; a shortcut needs a `key`. Variants, sizes, `rounded`, `startIcon` and
+`endIcon` are setters, and the renderer takes the attributes:
 
 ```elm
-Button.new |> Button.text "Delete" |> Button.destructive |> Button.large |> Button.toHtml []
-Button.new |> Button.icon trashIcon |> Button.label "Delete" |> Button.toHtml [ onClick Delete ]
+Button.new
+    |> Button.text "Delete"
+    |> Button.destructive
+    |> Button.large
+    |> Button.toHtml []
+
+Button.new
+    |> Button.icon trashIcon
+    |> Button.label "Delete"
+    |> Button.toHtml [ onClick Delete ]
 ```
 
 **Buttons as links.** `Button.toAnchor` renders an `<a>` with the same content and setters
 as `toHtml`, the equivalent of shadcn's `asChild` on an anchor:
 
 ```elm
-Button.new |> Button.text "Login" |> Button.secondary |> Button.toAnchor [ href "/login" ]
+Button.new
+    |> Button.text "Login"
+    |> Button.secondary
+    |> Button.toAnchor [ href "/login" ]
 ```
 
-**Styling other elements.** `Button.toAttributes` and `Badge.attributes` give you the
+**Styling other elements.** `Button.toAttributes` and `Badge.toAttributes` give you the
 styles without the element, the equivalent of shadcn's `buttonVariants`:
 
 ```elm
-span (Button.toAttributes (Button.new |> Button.outline)) [ text "Not a button" ]
+span
+    (Button.toAttributes
+        (Button.new
+            |> Button.outline
+        )
+    )
+    [ text "Not a button" ]
 ```
 
 **Buttons don't submit forms by default.** `Button.toHtml` renders `type="button"`, like

@@ -35,8 +35,13 @@ A badge is a small status dot in the bottom-right corner:
 
 Avatars can be stacked in a group, optionally ending with a count of how many more there are:
 
-    Avatar.group (Avatar.new |> Avatar.fallback [ text "AB" ])
-        [ Avatar.new |> Avatar.fallback [ text "CD" ] ]
+    Avatar.group
+        (Avatar.new
+            |> Avatar.fallback [ text "AB" ]
+        )
+        [ Avatar.new
+            |> Avatar.fallback [ text "CD" ]
+        ]
         |> Avatar.groupCount [ text "+3" ]
         |> Avatar.toHtml []
 

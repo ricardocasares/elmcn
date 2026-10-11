@@ -45,7 +45,12 @@ size =
                 |> Button.small
                 |> Button.outline
                 |> Button.toHtml []
-            , Button.new |> Button.icon (Phosphor.arrowUpRight Regular |> Phosphor.toHtml []) |> Button.label "Submit" |> Button.small |> Button.outline |> Button.toHtml []
+            , Button.new
+                |> Button.icon (Phosphor.arrowUpRight Regular |> Phosphor.toHtml [])
+                |> Button.label "Submit"
+                |> Button.small
+                |> Button.outline
+                |> Button.toHtml []
             ]
         , div [ class "flex items-start gap-2" ]
             [ Button.new

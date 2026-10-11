@@ -30,5 +30,10 @@ withAction =
     Alert.new
         |> Alert.title [ text "Dark mode is now available" ]
         |> Alert.description [ text "Enable it under your profile settings." ]
-        |> Alert.action (Button.new |> Button.text "Enable" |> Button.extraSmall |> Button.toHtml [])
+        |> Alert.action
+            (Button.new
+                |> Button.text "Enable"
+                |> Button.extraSmall
+                |> Button.toHtml []
+            )
         |> Alert.toHtml [ class "max-w-md" ]
