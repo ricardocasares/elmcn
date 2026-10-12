@@ -146,6 +146,24 @@
       ]
     },
     {
+      "name": "button-group",
+      "type": "registry:item",
+      "title": "Button Group",
+      "description": "A container that groups related buttons together with consistent styling.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/ButtonGroup.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/ButtonGroup.elm"
+        }
+      ]
+    },
+    {
       "name": "card",
       "type": "registry:item",
       "title": "Card",
@@ -178,6 +196,47 @@
           "path": "src/UI/Checkbox.elm",
           "type": "registry:file",
           "target": "~/src/UI/Checkbox.elm"
+        }
+      ]
+    },
+    {
+      "name": "dialog",
+      "type": "registry:item",
+      "title": "Dialog",
+      "description": "A window overlaid on either the primary window or another dialog window, rendering the content underneath inert.",
+      "docs": "Run `elm install elm/json` as well: the dialog decodes its close event.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/button"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/json"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Dialog.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Dialog.elm"
+        }
+      ]
+    },
+    {
+      "name": "dropdown-menu",
+      "type": "registry:item",
+      "title": "Dropdown Menu",
+      "description": "Displays a menu to the user, such as a set of actions or functions, triggered by a button.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/DropdownMenu.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/DropdownMenu.elm"
         }
       ]
     },
@@ -332,6 +391,24 @@
           "path": "src/UI/Pagination.elm",
           "type": "registry:file",
           "target": "~/src/UI/Pagination.elm"
+        }
+      ]
+    },
+    {
+      "name": "popover",
+      "type": "registry:item",
+      "title": "Popover",
+      "description": "Displays rich content in a portal, triggered by a button.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Popover.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Popover.elm"
         }
       ]
     },

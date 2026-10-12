@@ -57,8 +57,11 @@ the item you name, not to the items it depends on.
 | `badge` | `UI.Badge` |
 | `breadcrumb` | `UI.Breadcrumb` |
 | `button` | `UI.Button` |
+| `button-group` | `UI.ButtonGroup` |
 | `card` | `UI.Card` |
 | `checkbox` | `UI.Checkbox` |
+| `dialog` | `UI.Dialog` |
+| `dropdown-menu` | `UI.DropdownMenu` |
 | `empty` | `UI.Empty` |
 | `field` | `UI.Field` |
 | `input` | `UI.Input` |
@@ -67,6 +70,7 @@ the item you name, not to the items it depends on.
 | `label` | `UI.Label` |
 | `native-select` | `UI.NativeSelect` |
 | `pagination` | `UI.Pagination` |
+| `popover` | `UI.Popover` |
 | `progress` | `UI.Progress` |
 | `radio-group` | `UI.RadioGroup` |
 | `select` | `UI.Select` |
