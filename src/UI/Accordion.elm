@@ -27,7 +27,7 @@ Each item is a native `<details>` with a `<summary>` trigger, so it opens and cl
 
 The open state lives in the browser. Give an item `open` to render it open, and `onToggle` to be told when the user opens or closes it, for example to keep the state in your model.
 
-Opening and closing animates the height in browsers that support `interpolate-size` and falls back to an instant toggle elsewhere.
+Opening and closing animates the height with a `grid-template-rows` transition on `::details-content`, which works in Chrome, Safari and Firefox; browsers without `::details-content` toggle instantly.
 
 @docs Accordion, Ready, NeedsId
 
@@ -224,7 +224,7 @@ viewItem groupId mode (Item config) =
     Html.details
         ([ attribute "data-slot" "accordion-item"
          , property "open" (Encode.bool config.open)
-         , class "group/accordion-item not-last:border-b [interpolate-size:allow-keywords] details-content:h-0 details-content:overflow-hidden details-content:transition-[height,content-visibility] details-content:duration-200 details-content:ease-out details-content:[transition-behavior:allow-discrete] open:details-content:h-auto"
+         , class "group/accordion-item not-last:border-b details-content:grid details-content:grid-rows-[0fr] details-content:transition-[grid-template-rows,content-visibility] details-content:duration-200 details-content:ease-out details-content:[transition-behavior:allow-discrete] open:details-content:grid-rows-[1fr]"
          ]
             ++ (case mode of
                     Single ->
@@ -270,7 +270,7 @@ viewItem groupId mode (Item config) =
             )
         , Html.div
             [ attribute "data-slot" "accordion-content"
-            , class "overflow-hidden text-sm"
+            , class "min-h-0 overflow-hidden text-sm"
             ]
             [ Html.div
                 [ attribute "data-slot" "accordion-content-inner"
