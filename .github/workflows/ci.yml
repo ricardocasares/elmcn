@@ -18,5 +18,5 @@ jobs:
         run: bun run check
       - name: Install every item into a fresh Elm app and compile it
         run: bun run test:install
-      - name: Build the gallery
+      - name: Build docs
         run: bun run build

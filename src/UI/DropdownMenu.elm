@@ -440,6 +440,9 @@ toHtml attrs (DropdownMenu config) =
              , attribute "popover" "auto"
              , attribute "role" "menu"
              , attribute "aria-labelledby" config.id
+
+             -- Arrow keys move focus between the items, wrapping around at the ends.
+             , attribute "focusgroup" "menu block wrap"
              , attribute "data-slot" "dropdown-menu-content"
              , attribute "data-side" (sideName config.side)
              , attribute "data-align" (alignName config.align)
@@ -631,6 +634,7 @@ viewItem rootId prefix first index entry =
                     [ Html.Attributes.id subId
                     , attribute "popover" "auto"
                     , attribute "role" "menu"
+                    , attribute "focusgroup" "menu block wrap"
                     , attribute "data-slot" "dropdown-menu-sub-content"
                     , attribute "data-side" "right"
                     , attribute "style" ("position-anchor: " ++ subAnchor ++ "; " ++ submenuPlacement ++ "; " ++ minHeight config.items)

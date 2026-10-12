@@ -77,7 +77,7 @@ for (const item of items) {
       "elm-version": project["elm-version"],
       dependencies: {
         direct: pick([...packages].sort()),
-        indirect: pick(["elm/json", "elm/time", "elm/url", "elm/virtual-dom"]),
+        indirect: pick(["elm/json", "elm/time", "elm/url", "elm/virtual-dom"].filter((name) => !packages.has(name))),
       },
       "test-dependencies": { direct: {}, indirect: {} },
     })
