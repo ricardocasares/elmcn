@@ -27,7 +27,7 @@ Each item is a native `<details>` with a `<summary>` trigger, so it opens and cl
 
 The open state lives in the browser. Give an item `open` to render it open, and `onToggle` to be told when the user opens or closes it, for example to keep the state in your model.
 
-Opening and closing animates the height with a `grid-template-rows` transition on `::details-content`, which works in Chrome, Safari and Firefox; browsers without `::details-content` toggle instantly.
+Opening and closing animates the height with a `grid-template-rows` transition on `::details-content`, which works in Chrome, Safari and Firefox; browsers without `::details-content` toggle instantly. The content stays visible while it collapses and is hidden, and taken out of the tab order, once closed.
 
 @docs Accordion, Ready, NeedsId
 
@@ -224,7 +224,7 @@ viewItem groupId mode (Item config) =
     Html.details
         ([ attribute "data-slot" "accordion-item"
          , property "open" (Encode.bool config.open)
-         , class "group/accordion-item not-last:border-b details-content:grid details-content:grid-rows-[0fr] details-content:transition-[grid-template-rows,content-visibility] details-content:duration-200 details-content:ease-out details-content:[transition-behavior:allow-discrete] open:details-content:grid-rows-[1fr]"
+         , class "group/accordion-item not-last:border-b details-content:grid details-content:grid-rows-[0fr] details-content:[content-visibility:visible] details-content:transition-[grid-template-rows] details-content:duration-200 details-content:ease-out open:details-content:grid-rows-[1fr]"
          ]
             ++ (case mode of
                     Single ->
@@ -270,7 +270,7 @@ viewItem groupId mode (Item config) =
             )
         , Html.div
             [ attribute "data-slot" "accordion-content"
-            , class "min-h-0 overflow-hidden text-sm"
+            , class "invisible min-h-0 overflow-hidden text-sm transition-[visibility] duration-200 group-open/accordion-item:visible"
             ]
             [ Html.div
                 [ attribute "data-slot" "accordion-content-inner"
