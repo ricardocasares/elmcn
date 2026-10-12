@@ -206,7 +206,7 @@ separator attrs =
     Html.div
         ([ attribute "data-slot" "button-group-separator"
          , attribute "role" "none"
-         , class "relative mx-px w-px shrink-0 self-stretch bg-input [[data-orientation=vertical]>&]:mx-0 [[data-orientation=vertical]>&]:my-px [[data-orientation=vertical]>&]:h-px [[data-orientation=vertical]>&]:w-auto"
+         , class "relative my-px h-auto w-px shrink-0 self-stretch bg-input [[data-orientation=vertical]>&]:mx-px [[data-orientation=vertical]>&]:my-0 [[data-orientation=vertical]>&]:h-px [[data-orientation=vertical]>&]:w-auto"
          ]
             ++ attrs
         )
