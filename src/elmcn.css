@@ -273,9 +273,8 @@
   -webkit-text-fill-color: var(--shimmer-text-fill, transparent);
   animation: tw-shimmer var(--shimmer-duration, 2s) linear infinite;
 
-  @variant dark {
-    --_highlight: var(--shimmer-color, oklch(from currentColor max(0.8, calc(l + 0.4)) c h / calc(alpha + 0.4)));
-  }
+  /* shadcn brightens the highlight in dark mode, which is invisible on near-white text.
+     The light-mode fade (currentColor at 20% alpha) reads in both modes, so it is kept. */
 
   &:where([dir="rtl"], [dir="rtl"] *) {
     animation-direction: reverse;
