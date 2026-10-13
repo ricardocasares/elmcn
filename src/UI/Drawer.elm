@@ -454,17 +454,8 @@ toHtml attrs (Drawer config) =
           -- panel's view timeline between the scroller and the backdrop through
           -- `timeline-scope`.
           Html.node "dialog"
-            ([ class "fixed inset-0 z-50 m-0 hidden h-full max-h-none w-full max-w-none overflow-clip bg-transparent p-0 text-inherit outline-none backdrop:bg-transparent open:block [timeline-scope:--drawer]"
-
-             -- Once closed, the dialog stays laid out for a moment, unseen, so that
-             -- the scroller loses its exit area and its offset clamps back to zero,
-             -- ready for the next entrance. Straight to `display: none`, Chrome would
-             -- keep the offset, and the drawer would reopen already scrolled in.
-             -- Unseen through `opacity`, not `visibility`: a button inside that
-             -- transitions `all` would stay visible for its own transition.
-             , class "transition-[display,overlay] duration-100 transition-discrete not-open:pointer-events-none not-open:opacity-0"
-             ]
-                ++ (if config.modal then
+            (class "fixed inset-0 z-50 m-0 hidden h-full max-h-none w-full max-w-none overflow-clip bg-transparent p-0 text-inherit outline-none backdrop:bg-transparent open:block [timeline-scope:--drawer]"
+                :: (if config.modal then
                         -- The page behind stops scrolling while the drawer is modal,
                         -- keeping its scrollbar gutter so that nothing shifts.
                         [ class "[html:has(&:modal)]:overflow-hidden [html:has(&:modal)]:[scrollbar-gutter:stable]" ]
@@ -536,18 +527,27 @@ toHtml attrs (Drawer config) =
                 [ Html.div
                     [ class "pointer-events-none relative flex"
                     , class (contentClass layout)
+
+                    -- Unseen at the end of the slide-out, when the exit area and the
+                    -- bleed collapse and the panel would jump. Through `opacity`, not
+                    -- `visibility`, which a button inside that transitions `all`
+                    -- would keep for its own transition.
+                    , class "transition-opacity duration-0 [elmcn-dialog:not([open])>dialog>*>&]:opacity-0 [elmcn-dialog:not([open])>dialog>*>&]:delay-400"
                     ]
-                    -- The exit area and the bleed only exist while the dialog is open.
-                    -- Chrome keeps a scroller's offset through `display: none`, so a
+                    -- The exit area and the bleed only exist while the drawer is open.
+                    -- Browsers keep a scroller's offset through `display: none`, so a
                     -- drawer closed by a button would reopen already scrolled in, with
-                    -- nothing left to animate. Without them the scroller has no room,
-                    -- and its offset clamps back to zero. The exit area is the part of
-                    -- the backdrop above the panel, so a tap on it asks to close a
-                    -- modal drawer, and a drag on it swipes the drawer.
+                    -- nothing left to animate. They collapse near the end of the
+                    -- slide-out, while the dialog is still shown, so that the scroller
+                    -- has no room left and its offset clamps back to zero. Only on the
+                    -- way out: a drawer opened again comes back with them at once. The
+                    -- exit area is the part of the backdrop above the panel, so a tap
+                    -- on it asks to close a modal drawer, and a drag on it swipes it.
                     [ Html.div
                         ([ attribute "data-slot" "drawer-exit"
                          , attribute "aria-hidden" "true"
                          , class "shrink-0 [:not(:is([open],:popover-open))>*>*>&]:hidden"
+                         , class "max-h-[200dvh] max-w-[200dvw] transition-[max-width,max-height] duration-0 [elmcn-dialog:not([open])>dialog>*>*>&]:max-h-0 [elmcn-dialog:not([open])>dialog>*>*>&]:max-w-0 [elmcn-dialog:not([open])>dialog>*>*>&]:delay-400"
                          , class (exitClass layout)
                          ]
                             ++ (if config.modal then
@@ -643,7 +643,7 @@ toHtml attrs (Drawer config) =
                                 ]
                             )
                         ]
-                    , Html.div [ class "relative shrink-0 bg-popover [:not(:is([open],:popover-open))>*>*>&]:hidden", class (bleedClass layout) ] []
+                    , Html.div [ class "relative shrink-0 bg-popover [:not(:is([open],:popover-open))>*>*>&]:hidden", class "max-h-[200dvh] max-w-[200dvw] transition-[max-width,max-height] duration-0 [elmcn-dialog:not([open])>dialog>*>*>&]:max-h-0 [elmcn-dialog:not([open])>dialog>*>*>&]:max-w-0 [elmcn-dialog:not([open])>dialog>*>*>&]:delay-400", class (bleedClass layout) ] []
                     ]
                 ]
             ]
