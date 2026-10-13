@@ -54,6 +54,7 @@ the item you name, not to the items it depends on.
 | `alert` | `UI.Alert` |
 | `alert-dialog` | `UI.AlertDialog` |
 | `aspect-ratio` | `UI.AspectRatio` |
+| `attachment` | `UI.Attachment` |
 | `avatar` | `UI.Avatar` |
 | `badge` | `UI.Badge` |
 | `breadcrumb` | `UI.Breadcrumb` |
@@ -99,11 +100,11 @@ model too, with one native range input per thumb.
 (`type_`, `role`, …). Parts of compound components are functions in the same module:
 `Pagination.link`, `Table.row`, and so on.
 
-**Components with options or content are builders.** Button, Badge, Alert, Avatar, Breadcrumb, Card, Empty, Kbd,
+**Components with options or content are builders.** Button, Badge, Alert, Attachment, Avatar, Breadcrumb, Card, Empty, Kbd,
 Native Select, Progress, Select, Separator, Slider and Switch start
 with `new`, add content, pipe through setters, and render at the end. The compiler won't
 let you render until the required content is there: a button needs `text`, or `icon` and
-an accessible `label`; a badge needs `text`; an alert needs `title`; an avatar needs
+an accessible `label`; a badge needs `text`; an alert or an attachment needs `title`; an avatar needs
 `fallback`; a shortcut needs a `key`; a select needs an `id` and an `onSelect` handler; a slider needs a `value`, `range` or
 `values` and then an `onChange` handler whose type follows from it. Variants, sizes, `rounded`, `startIcon` and
 `endIcon` are setters, and the renderer takes the attributes:

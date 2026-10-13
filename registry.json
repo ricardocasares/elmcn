@@ -97,6 +97,27 @@
       ]
     },
     {
+      "name": "attachment",
+      "type": "registry:item",
+      "title": "Attachment",
+      "description": "Displays a file or image attachment with media, metadata, upload state, and actions.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/button"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Attachment.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Attachment.elm"
+        }
+      ]
+    },
+    {
       "name": "avatar",
       "type": "registry:item",
       "title": "Avatar",
@@ -603,7 +624,7 @@
       "name": "tabs",
       "type": "registry:item",
       "title": "Tabs",
-      "description": "A set of layered sections of content—known as tab panels—that are displayed one at a time.",
+      "description": "A set of layered sections of content\u2014known as tab panels\u2014that are displayed one at a time.",
       "meta": {
         "elmDependencies": [
           "elm/html"
