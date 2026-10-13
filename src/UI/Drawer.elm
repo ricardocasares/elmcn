@@ -513,6 +513,11 @@ toHtml attrs (Drawer config) =
                 ([ attribute "data-slot" "drawer-scroller"
                  , class "absolute inset-0 scroll-smooth [scrollbar-width:none] overscroll-contain motion-reduce:scroll-auto [&::-webkit-scrollbar]:hidden"
                  , class (scrollerClass layout)
+
+                 -- No snapping on the way out. Browsers place snap points where the
+                 -- markers are drawn, so while the panel slides out they would scroll
+                 -- after the moving markers, and the panel would come back up.
+                 , class "[elmcn-dialog:not([open])>dialog>&]:[scroll-snap-type:none]"
                  ]
                     -- A swipe ends in a scroll that ends: `scroll` also fires while
                     -- the drawer opens and closes.
@@ -562,6 +567,12 @@ toHtml attrs (Drawer config) =
                         ([ attribute "data-slot" "drawer-stage"
                          , class "shrink-0 outline-none"
                          , class (stageClass (not (List.isEmpty points)) layout)
+
+                         -- Clipped on the way out, so that the sliding panel doesn't
+                         -- count toward what scrolls, and the scroller loses all its room
+                         -- once the exit area and the bleed collapse. Its edges are at
+                         -- or past the screen's where the panel leaves.
+                         , class "[elmcn-dialog:not([open])>dialog>*>*>&]:overflow-clip"
                          ]
                             ++ (if List.isEmpty points then
                                     entrance
