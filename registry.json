@@ -56,6 +56,29 @@
       ]
     },
     {
+      "name": "alert-dialog",
+      "type": "registry:item",
+      "title": "Alert Dialog",
+      "description": "A modal dialog that interrupts the user with important content and expects a response.",
+      "docs": "Run `elm install elm/json` as well: the alert dialog decodes its close event.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/button"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/json"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/AlertDialog.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/AlertDialog.elm"
+        }
+      ]
+    },
+    {
       "name": "aspect-ratio",
       "type": "registry:item",
       "title": "Aspect Ratio",
@@ -580,7 +603,7 @@
       "name": "tabs",
       "type": "registry:item",
       "title": "Tabs",
-      "description": "A set of layered sections of content\u2014known as tab panels\u2014that are displayed one at a time.",
+      "description": "A set of layered sections of content—known as tab panels—that are displayed one at a time.",
       "meta": {
         "elmDependencies": [
           "elm/html"

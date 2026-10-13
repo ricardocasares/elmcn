@@ -52,6 +52,7 @@ the item you name, not to the items it depends on.
 | --- | --- |
 | `accordion` | `UI.Accordion` |
 | `alert` | `UI.Alert` |
+| `alert-dialog` | `UI.AlertDialog` |
 | `aspect-ratio` | `UI.AspectRatio` |
 | `avatar` | `UI.Avatar` |
 | `badge` | `UI.Badge` |
