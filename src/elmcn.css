@@ -137,7 +137,8 @@
 
 /*
   Utilities from shadcn's `tailwind.css` that the attachment uses: a shimmer on the title
-  while it uploads, and a scroll fade plus hidden scrollbar on the attachment group.
+  while it uploads, and a scroll fade plus hidden scrollbar on the attachment group. The
+  drawer demo uses the vertical scroll fade.
 */
 
 @utility scrollbar-none {
@@ -212,6 +213,40 @@
       scroll-fade-reveal-s 1ms ease-in-out,
       scroll-fade-reveal-e 1ms ease-in-out;
     animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range:
+      0 var(--scroll-fade-reveal, calc(var(--spacing) * 24)),
+      calc(100% - var(--scroll-fade-reveal, calc(var(--spacing) * 24))) 100%;
+    animation-fill-mode: both;
+  }
+
+  @supports not (animation-timeline: scroll()) {
+    --scroll-fade-s: var(--_scroll-fade-size-s);
+    --scroll-fade-e: var(--_scroll-fade-size-e);
+  }
+}
+
+@utility scroll-fade {
+  --_scroll-fade-size-s: var(--scroll-fade-s-size, var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10))));
+  --_scroll-fade-size-e: var(--scroll-fade-e-size, var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10))));
+  --scroll-fade-block: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--scroll-fade-s, 0px),
+    #000 calc(100% - var(--scroll-fade-e, 0px)),
+    transparent 100%
+  );
+  -webkit-mask-image: var(--scroll-fade-mask, var(--scroll-fade-block));
+  mask-image: var(--scroll-fade-mask, var(--scroll-fade-block));
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+
+  @supports (animation-timeline: scroll()) {
+    animation:
+      scroll-fade-reveal-s 1ms ease-in-out,
+      scroll-fade-reveal-e 1ms ease-in-out;
+    animation-timeline: scroll(self block), scroll(self block);
     animation-range:
       0 var(--scroll-fade-reveal, calc(var(--spacing) * 24)),
       calc(100% - var(--scroll-fade-reveal, calc(var(--spacing) * 24))) 100%;

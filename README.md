@@ -63,6 +63,7 @@ the item you name, not to the items it depends on.
 | `card` | `UI.Card` |
 | `checkbox` | `UI.Checkbox` |
 | `dialog` | `UI.Dialog` |
+| `drawer` | `UI.Drawer` |
 | `dropdown-menu` | `UI.DropdownMenu` |
 | `empty` | `UI.Empty` |
 | `field` | `UI.Field` |
