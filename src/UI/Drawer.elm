@@ -572,7 +572,7 @@ toHtml attrs (Drawer config) =
                         []
                     , Html.div
                         ([ attribute "data-slot" "drawer-stage"
-                         , class "shrink-0 outline-none"
+                         , class "relative shrink-0 outline-none"
                          , class (stageClass (not (List.isEmpty points)) layout)
 
                          -- Clipped on the way out, so that the sliding panel doesn't
@@ -588,79 +588,80 @@ toHtml attrs (Drawer config) =
                                     []
                                )
                         )
-                        [ Html.div
-                            ([ attribute "data-slot" "drawer-popup"
-                             , class "group/drawer-popup pointer-events-auto relative flex min-h-0 bg-popover text-sm text-popover-foreground outline-none select-none will-change-transform [interpolate-size:allow-keywords]"
+                        (List.indexedMap (viewSnapPoint layout) points
+                            ++ [ Html.div
+                                    ([ attribute "data-slot" "drawer-popup"
+                                     , class "group/drawer-popup pointer-events-auto relative flex min-h-0 bg-popover text-sm text-popover-foreground outline-none select-none will-change-transform [interpolate-size:allow-keywords]"
 
-                             -- Slides in while its own `<elmcn-dialog>` is `open`, and out
-                             -- once it isn't. Shrinks and peeks out behind the drawers
-                             -- nested in it, one step per level.
-                             , class "transition-[translate,scale,filter,height] duration-450 ease-[cubic-bezier(0.22,1,0.36,1)] [&:has(elmcn-dialog[open])]:overflow-hidden [&:has(elmcn-dialog[open])]:brightness-95 [&:has(elmcn-dialog[open])]:scale-95 [&:has(elmcn-dialog[open]_elmcn-dialog[open])]:scale-90 [&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:scale-[0.85]"
-                             , class (panelClass layout)
-                             ]
-                                ++ (if List.isEmpty sizes then
-                                        []
+                                     -- Slides in while its own `<elmcn-dialog>` is `open`, and out
+                                     -- once it isn't. Shrinks and peeks out behind the drawers
+                                     -- nested in it, one step per level.
+                                     , class "transition-[translate,scale,filter,height] duration-450 ease-[cubic-bezier(0.22,1,0.36,1)] [&:has(elmcn-dialog[open])]:overflow-hidden [&:has(elmcn-dialog[open])]:brightness-95 [&:has(elmcn-dialog[open])]:scale-95 [&:has(elmcn-dialog[open]_elmcn-dialog[open])]:scale-90 [&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:scale-[0.85]"
+                                     , class (panelClass layout)
+                                     ]
+                                        ++ (if List.isEmpty sizes then
+                                                []
 
-                                    else
-                                        [ attribute "style" (String.join "; " sizes) ]
-                                   )
-                                ++ attrs
-                            )
-                            (List.concat
-                                [ List.indexedMap (viewSnapPoint layout) points
-                                , List.filterMap identity [ handle ]
-                                , [ Html.div
-                                        [ attribute "data-slot" "drawer-content"
-                                        , class "flex min-h-0 flex-1 flex-col overflow-hidden overscroll-auto rounded-[inherit] transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text [&:has(elmcn-dialog[open])]:opacity-0"
+                                            else
+                                                [ attribute "style" (String.join "; " sizes) ]
+                                           )
+                                        ++ attrs
+                                    )
+                                    (List.concat
+                                        [ List.filterMap identity [ handle ]
+                                        , [ Html.div
+                                                [ attribute "data-slot" "drawer-content"
+                                                , class "flex min-h-0 flex-1 flex-col overflow-hidden overscroll-auto rounded-[inherit] transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text [&:has(elmcn-dialog[open])]:opacity-0"
+                                                ]
+                                                (List.filterMap identity
+                                                    [ if hasHeader then
+                                                        Just
+                                                            (Html.div
+                                                                [ attribute "data-slot" "drawer-header"
+                                                                , class "flex shrink-0 flex-col gap-0.5 p-4 pb-0 md:gap-0.5 md:text-left"
+                                                                , class (headerClass layout)
+                                                                ]
+                                                                (List.filterMap identity
+                                                                    [ if List.isEmpty config.title then
+                                                                        Nothing
+
+                                                                      else
+                                                                        Just
+                                                                            (Html.h2
+                                                                                [ Html.Attributes.id titleId
+                                                                                , attribute "data-slot" "drawer-title"
+                                                                                , class "text-base font-medium text-foreground"
+                                                                                ]
+                                                                                config.title
+                                                                            )
+                                                                    , if List.isEmpty config.description then
+                                                                        Nothing
+
+                                                                      else
+                                                                        Just
+                                                                            (Html.p
+                                                                                [ Html.Attributes.id descriptionId
+                                                                                , attribute "data-slot" "drawer-description"
+                                                                                , class "text-sm text-balance text-muted-foreground"
+                                                                                ]
+                                                                                config.description
+                                                                            )
+                                                                    ]
+                                                                )
+                                                            )
+
+                                                      else
+                                                        Nothing
+                                                    ]
+                                                    ++ config.content
+                                                    ++ List.filterMap identity
+                                                        [ Maybe.map viewFooter config.footer ]
+                                                )
+                                          ]
                                         ]
-                                        (List.filterMap identity
-                                            [ if hasHeader then
-                                                Just
-                                                    (Html.div
-                                                        [ attribute "data-slot" "drawer-header"
-                                                        , class "flex shrink-0 flex-col gap-0.5 p-4 pb-0 md:gap-0.5 md:text-left"
-                                                        , class (headerClass layout)
-                                                        ]
-                                                        (List.filterMap identity
-                                                            [ if List.isEmpty config.title then
-                                                                Nothing
-
-                                                              else
-                                                                Just
-                                                                    (Html.h2
-                                                                        [ Html.Attributes.id titleId
-                                                                        , attribute "data-slot" "drawer-title"
-                                                                        , class "text-base font-medium text-foreground"
-                                                                        ]
-                                                                        config.title
-                                                                    )
-                                                            , if List.isEmpty config.description then
-                                                                Nothing
-
-                                                              else
-                                                                Just
-                                                                    (Html.p
-                                                                        [ Html.Attributes.id descriptionId
-                                                                        , attribute "data-slot" "drawer-description"
-                                                                        , class "text-sm text-balance text-muted-foreground"
-                                                                        ]
-                                                                        config.description
-                                                                    )
-                                                            ]
-                                                        )
-                                                    )
-
-                                              else
-                                                Nothing
-                                            ]
-                                            ++ config.content
-                                            ++ List.filterMap identity
-                                                [ Maybe.map viewFooter config.footer ]
-                                        )
-                                  ]
-                                ]
-                            )
-                        ]
+                                    )
+                               ]
+                        )
                     , Html.div [ class "relative shrink-0 bg-popover [:not(:is([open],:popover-open))>*>*>&]:hidden", class "max-h-[200dvh] max-w-[200dvw] transition-[max-width,max-height] duration-0 [elmcn-dialog:not([open])>dialog>*>*>&]:max-h-0 [elmcn-dialog:not([open])>dialog>*>*>&]:max-w-0 [elmcn-dialog:not([open])>dialog>*>*>&]:delay-400", class (bleedClass layout) ] []
                     ]
                 ]
@@ -692,12 +693,18 @@ viewHandle layout attrs =
         []
 
 
-{-| A snap point is a marker inside the panel, `point` in from its leading edge. It snaps to the
+{-| A snap point is a marker in the stage, `point` in from the panel's leading edge. It snaps to the
 leading edge of the scroller by way of a scroll margin of one viewport, which leaves exactly `point`
 of the panel in view. The margin also makes the marker's snap area as tall as the viewport, so that
 the dialog focusing the first marker on opening scrolls it to the same place, whichever way the
 browser aligns what it scrolls into view. The marker is two pixels tall, since Chrome ignores a
 smaller one.
+
+The markers sit beside the panel rather than in it, because browsers place snap points and scroll
+focused elements into view where they are drawn: in Firefox, the panel is still translated off
+screen by `@starting-style` when the dialog focuses the first marker, which scrolled the drawer a
+whole panel too far, to its tallest point, before it snapped back.
+
 -}
 viewSnapPoint : Layout -> Int -> Float -> Html msg
 viewSnapPoint layout index point =
