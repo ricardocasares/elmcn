@@ -1,7 +1,8 @@
 // Generates docs/Generated.elm, the data behind the docs site, so that what the site
 // shows is always what the repository contains:
 //
-// - the component list, titles, descriptions and install packages come from registry.json
+// - the component list, titles, descriptions, install packages and the scripts to import
+//   from your JavaScript entry point come from registry.json
 // - usage and the API table come from the `src/UI/*.elm` module docs and signatures
 // - every `name : Html msg` in `docs/Examples/<Module>.elm` becomes an example, rendered
 //   from the real function and shown with its own source as the code. An example that
@@ -15,7 +16,7 @@ type Item = {
   name: string;
   title: string;
   description: string;
-  files: { path: string }[];
+  files: { path: string; target: string }[];
   meta?: { elmDependencies?: string[] };
 };
 type Registry = { items: Item[] };
@@ -29,6 +30,7 @@ type Component = {
   name: string;
   path: string;
   packages: string[];
+  scripts: string[];
   examples: Example[];
   usage: string;
   api: Entry[];
@@ -158,7 +160,11 @@ const component = async (item: Item): Promise<Component | null> => {
     description: item.description,
     name,
     path,
-    packages: (item.meta?.elmDependencies ?? []).filter((p) => p !== "elm/html"),
+    packages: item.meta?.elmDependencies ?? [],
+    // As imported from an entry point in src/, e.g. "./UI/elmcn-dialog".
+    scripts: item.files
+      .filter((f) => f.target.endsWith(".ts"))
+      .map((f) => f.target.replace(/^~\/src\//, "./").replace(/\.ts$/, "")),
     examples,
     ...parseModule(path, await Bun.file(path).text()),
   };
@@ -191,6 +197,7 @@ const renderComponent = (c: Component): string => `{ slug = ${str(c.slug)}
 , module_ = ${str("UI." + c.name)}
 , file = ${str(c.path)}
 , packages = ${list(c.packages.map(str))}
+, scripts = ${list(c.scripts.map(str))}
 , usage = ${str(c.usage)}
 , examples = ${list(c.examples.map((e) => renderExample(c.name, e)))}
 , api = ${list(c.api.map(renderEntry))}

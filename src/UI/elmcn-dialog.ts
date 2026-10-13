@@ -1,7 +1,7 @@
 // <elmcn-dialog>, the thin custom element behind UI.Dialog. Import it once from your
 // JavaScript entry point:
 //
-//     import "./elmcn-dialog";
+//     import "./UI/elmcn-dialog";
 
 
 export class ElmcnDialog extends HTMLElement {

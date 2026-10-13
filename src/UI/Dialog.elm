@@ -37,7 +37,7 @@ The open state lives in your model. Open the dialog from any button of your own:
 
 The dialog is a native `<dialog>` inside `<elmcn-dialog>`, a small custom element that opens it when `open` is true, and closes it for real once its exit transition has ended, so it fades and zooms the same way in every browser. Import the element once from your JavaScript entry point:
 
-    import "./elmcn-dialog";
+    import "./UI/elmcn-dialog";
 
 The dialog opens in the top layer over a dimmed, blurred overlay: it traps focus, makes the rest of the page inert and stops it scrolling. Escape, a tap on the overlay and the close button send the message you gave [`open`](#open), and the dialog closes when your model says so. A [`modal`](#modal) dialog ignores taps on the overlay.
 
@@ -252,6 +252,20 @@ toHtml attrs (Dialog config) =
              -- The page behind stops scrolling while the dialog is open, keeping
              -- its scrollbar gutter so that nothing shifts.
              , class "[html:has(&:modal)]:overflow-hidden [html:has(&:modal)]:[scrollbar-gutter:stable]"
+
+             -- On iOS, where `-webkit-touch-callout` exists, the page behind is dimmed
+             -- and blurred by a filter on the root instead of by the overlay, to the
+             -- same effect. iOS Safari clips fixed layers at its floating toolbar and
+             -- paints the root background beneath it as soon as one with a
+             -- background or a `backdrop-filter` touches the bottom edge, hiding the
+             -- page there. A filter on the root reaches under the toolbar, leaves the
+             -- top layer the dialog is in alone, and unlike one on any other element
+             -- doesn't become the containing block of the page's fixed elements.
+             -- Nowhere else, because Firefox filters the top layer along with the
+             -- root, and blurring the whole page on every frame of the transition
+             -- costs more than blurring the viewport behind the overlay. In while
+             -- any `<elmcn-dialog>` is `open`, and out before the element closes it.
+             , class "supports-[-webkit-touch-callout:none]:[html:has(&:modal)]:transition-[filter] supports-[-webkit-touch-callout:none]:[html:has(&:modal)]:duration-300 supports-[-webkit-touch-callout:none]:[html:has(&:modal)]:ease-[ease] supports-[-webkit-touch-callout:none]:[html:has(elmcn-dialog[open]>&:modal)]:[filter:blur(var(--blur-xs))_brightness(0.9)]"
              ]
                 ++ (if List.isEmpty config.title then
                         []
@@ -270,14 +284,15 @@ toHtml attrs (Dialog config) =
             [ Html.div
                 ([ attribute "data-slot" "dialog-overlay"
                  , attribute "aria-hidden" "true"
-                 , class "absolute inset-0 bg-black/10 select-none"
+                 , class "absolute inset-0 select-none not-supports-[-webkit-touch-callout:none]:bg-black/10"
 
                  -- In while its own `<elmcn-dialog>` is `open`, not any ancestor, so that
                  -- a nested dialog closes while its parent stays open. From
                  -- `@starting-style`, and out once it isn't, before the element
                  -- closes the dialog. Plain properties, because Safari ignores
-                 -- `@starting-style` values set through variables.
-                 , class "opacity-0 [backdrop-filter:blur(0)] transition-[opacity,backdrop-filter] duration-300 ease-[ease] [elmcn-dialog[open]>dialog>&]:opacity-100 [elmcn-dialog[open]>dialog>&]:[backdrop-filter:blur(var(--blur-xs))] starting:[elmcn-dialog[open]>dialog>&]:opacity-0 starting:[elmcn-dialog[open]>dialog>&]:[backdrop-filter:blur(0)]"
+                 -- `@starting-style` values set through variables. Transparent on iOS,
+                 -- where the root's filter dims the page instead.
+                 , class "opacity-0 transition-[opacity,backdrop-filter] duration-300 ease-[ease] [elmcn-dialog[open]>dialog>&]:opacity-100 starting:[elmcn-dialog[open]>dialog>&]:opacity-0 not-supports-[-webkit-touch-callout:none]:[backdrop-filter:blur(0)] not-supports-[-webkit-touch-callout:none]:[elmcn-dialog[open]>dialog>&]:[backdrop-filter:blur(var(--blur-xs))] not-supports-[-webkit-touch-callout:none]:starting:[elmcn-dialog[open]>dialog>&]:[backdrop-filter:blur(0)]"
 
                  -- A nested dialog doesn't dim the page twice, like Base UI, which leaves
                  -- out its backdrop. Its overlay still takes the taps that close it.

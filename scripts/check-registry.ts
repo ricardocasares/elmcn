@@ -4,6 +4,7 @@
 // - every file installs to the same path it has in this repo
 // - every `import UI.X` is covered by a registryDependency
 // - meta.elmDependencies lists every Elm package the item (and its dependencies) import
+// - the docs of an item that ships a script tell users to import it
 //
 // Usage: bun scripts/check-registry.ts
 
@@ -43,7 +44,7 @@ for (const item of registry.items) {
   }
 }
 
-for (const file of readdirSync("src/UI")) {
+for (const file of readdirSync("src/UI").filter((f) => f.endsWith(".elm"))) {
   const module = `UI.${file.replace(/\.elm$/, "")}`;
   if (!moduleOwner.has(module)) errors.push(`${module} is not in any registry item`);
 }
@@ -101,6 +102,12 @@ for (const item of registry.items) {
   for (const p of declared) {
     if (p !== "elm/html" && p !== "elm/core" && !(item.docs ?? "").includes(p)) {
       errors.push(`${item.name}: needs ${p}, but its docs don't tell users to install it`);
+    }
+  }
+  for (const file of item.files.filter((f) => f.path.endsWith(".ts"))) {
+    const specifier = file.target.replace(/^~\/src\//, "./").replace(/\.ts$/, "");
+    if (!(item.docs ?? "").includes(`import "${specifier}";`)) {
+      errors.push(`${item.name}: ships ${file.path}, but its docs don't tell users to import "${specifier}"`);
     }
   }
 }

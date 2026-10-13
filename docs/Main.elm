@@ -450,13 +450,15 @@ viewComponent model component =
         , section "Installation"
             ([ shellBlock model.copied ("npx shadcn@latest add ricardocasares/elmcn/" ++ component.slug)
              , prose [ text ("This writes " ++ component.file ++ ", along with any components it uses.") ]
+             , prose [ text "It needs these Elm packages:" ]
+             , shellBlock model.copied (String.join "\n" (List.map (\p -> "elm install " ++ p) component.packages))
              ]
-                ++ (if List.isEmpty component.packages then
+                ++ (if List.isEmpty component.scripts then
                         []
 
                     else
-                        [ prose [ text "It also needs these Elm packages:" ]
-                        , shellBlock model.copied (String.join "\n" (List.map (\p -> "elm install " ++ p) component.packages))
+                        [ prose [ text "Then import its custom element once from your JavaScript entry point:" ]
+                        , shellBlock model.copied (String.join "\n" (List.map (\s -> "import \"" ++ s ++ "\"; // path relative to this file") component.scripts))
                         ]
                    )
             )

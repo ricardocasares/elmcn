@@ -14,6 +14,7 @@ type alias Component =
     , module_ : String
     , file : String
     , packages : List String
+    , scripts : List String
     , usage : String
     , examples : List Example
     , api : List Entry

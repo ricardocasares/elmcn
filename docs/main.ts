@@ -1,5 +1,5 @@
 import "./app.css";
-import "../src/elmcn-dialog";
+import "../src/UI/elmcn-dialog";
 import { Elm } from "./Main.elm";
 
 const media = window.matchMedia("(prefers-color-scheme: dark)");
