@@ -4,7 +4,7 @@ module UI.Drawer exposing
     , id, open
     , title, description, content, footer
     , down, up, left, right, downOnMobile
-    , swipeHandle, swipeable, snapPoints, nonModal, height, width
+    , swipeHandle, snapPoints, nonModal, height, width
     , toHtml
     )
 
@@ -40,7 +40,7 @@ The drawer is a native `<dialog>` inside `<elmcn-dialog>`, the same small custom
 
     import "./UI/elmcn-dialog";
 
-The drawer opens in the top layer over a dimmed, blurred backdrop: it traps focus, makes the rest of the page inert and stops it scrolling. Escape, a tap on the backdrop and a swipe that [closes](#swipeable) it send the message you gave [`open`](#open), and the drawer slides out when your model says so. It slides in from the bottom unless given a [side](#sides). Drawers nest: a drawer opened from inside another one stacks in front, and the ones behind shrink and peek out from the edge.
+The drawer opens in the top layer over a dimmed, blurred backdrop: it traps focus, makes the rest of the page inert and stops it scrolling. Escape, a tap on the backdrop and a [swipe](#swiping) that closes it send the message you gave [`open`](#open), and the drawer slides out when your model says so. It slides in from the bottom unless given a [side](#sides). Drawers nest: a drawer opened from inside another one stacks in front, and the ones behind shrink and peek out from the edge.
 
 @docs Drawer, Ready, NeedsId, NeedsOpen
 
@@ -73,12 +73,12 @@ The last one wins. A vertical drawer sizes itself to its content, capped at `cal
 
 # Setters
 
-@docs swipeHandle, swipeable, snapPoints, nonModal, height, width
+@docs swipeHandle, snapPoints, nonModal, height, width
 
 
 # Swiping
 
-A swipe is a scroll gesture, handled by the browser rather than by Elm. The drawer sits in a scroller that is hidden but snaps to two places, closed and open, so a finger or a trackpad drags it with momentum and rubber band, off the main thread, and the backdrop fades in step with it through a CSS view timeline. A swipe that ends closed sends the message you gave [`open`](#open), like Escape does. Without [`swipeable`](#swipeable) the drawer slides in the same way, but the scroller can't be dragged.
+A swipe is a scroll gesture, handled by the browser rather than by Elm. The drawer sits in a scroller that is hidden but snaps to two places, closed and open, so a finger or a trackpad drags it with momentum and rubber band, off the main thread, and the backdrop fades in step with it through a CSS view timeline. Let go a little over halfway out, or flick it toward its edge, and the drawer asks to close with the message you gave [`open`](#open), like Escape does; let go sooner and it settles back, or at the nearest of the [`snapPoints`](#snapPoints). Every drawer can be swiped, and the [`swipeHandle`](#swipeHandle) only hints at it.
 
 A mouse can't drag the drawer, since a mouse doesn't scroll by dragging: the wheel and a trackpad work, and touch is the primary input. Browsers that don't support `scrollend` or view timelines keep a drawer that opens and closes, without the swipe dismissal or the synced backdrop.
 
@@ -112,7 +112,6 @@ type Drawer id state msg
         , side : Side
         , downOnMobile : Bool
         , handle : Bool
-        , swipeable : Bool
         , snapPoints : List Float
         , modal : Bool
         , height : Maybe String
@@ -164,7 +163,6 @@ new =
         , side = Down
         , downOnMobile = False
         , handle = False
-        , swipeable = False
         , snapPoints = []
         , modal = True
         , height = Nothing
@@ -271,18 +269,11 @@ downOnMobile (Drawer config) =
 -- SETTERS
 
 
-{-| Shows a swipe handle along the edge the drawer slid in from, a bar that hints the drawer can be dragged. On its own it is purely visual; see [`swipeable`](#swipeable).
+{-| Shows a swipe handle along the edge the drawer slid in from, a bar that hints the drawer can be dragged. It is purely visual: every drawer can be [swiped](#swiping), with or without it.
 -}
 swipeHandle : Drawer id state msg -> Drawer id state msg
 swipeHandle (Drawer config) =
     Drawer { config | handle = True }
-
-
-{-| Lets a swipe drag the drawer, and shows the swipe handle. Let go a little over halfway out, or flick it toward its edge, and the drawer asks to close with the message you gave [`open`](#open); let go sooner and it settles back, or at the nearest of the [`snapPoints`](#snapPoints).
--}
-swipeable : Drawer id state msg -> Drawer id state msg
-swipeable (Drawer config) =
-    Drawer { config | handle = True, swipeable = True }
 
 
 {-| Heights a vertical drawer settles at when a swipe ends, instead of sizing itself to its content. A number up to `1` is a fraction of the viewport height, and a bigger one is in pixels. The drawer opens at the first one, and is as tall as the viewport behind its visible part.
@@ -530,16 +521,11 @@ toHtml attrs (Drawer config) =
             , Html.div
                 ([ attribute "data-slot" "drawer-scroller"
                  , class "absolute inset-0 scroll-smooth [scrollbar-width:none] overscroll-contain motion-reduce:scroll-auto [&::-webkit-scrollbar]:hidden"
-                 , class (scrollerClass config.swipeable layout)
+                 , class (scrollerClass layout)
                  ]
-                    ++ (if config.swipeable then
-                            -- A swipe ends in a scroll that ends: `scroll` also fires
-                            -- while the drawer opens and closes.
-                            List.map (Html.Events.on "scrollend" << dismissDecoder) onClose
-
-                        else
-                            []
-                       )
+                    -- A swipe ends in a scroll that ends: `scroll` also fires while
+                    -- the drawer opens and closes.
+                    ++ List.map (Html.Events.on "scrollend" << dismissDecoder) onClose
                     ++ (if config.modal then
                             []
 
@@ -789,65 +775,32 @@ panelClass layout =
                    )
 
 
-scrollerClass : Bool -> Layout -> String
-scrollerClass swiping layout =
+scrollerClass : Layout -> String
+scrollerClass layout =
     case layout of
         FixedSide Down ->
-            if swiping then
-                "overflow-y-auto overflow-x-hidden [scroll-snap-type:y_mandatory]"
-
-            else
-                "overflow-y-hidden overflow-x-hidden [scroll-snap-type:y_mandatory]"
+            "overflow-y-auto overflow-x-hidden [scroll-snap-type:y_mandatory]"
 
         FixedSide Up ->
-            if swiping then
-                "overflow-y-auto overflow-x-hidden [scroll-snap-type:y_mandatory] [writing-mode:vertical-rl] [direction:rtl]"
-
-            else
-                "overflow-y-hidden overflow-x-hidden [scroll-snap-type:y_mandatory] [writing-mode:vertical-rl] [direction:rtl]"
+            "overflow-y-auto overflow-x-hidden [scroll-snap-type:y_mandatory] [writing-mode:vertical-rl] [direction:rtl]"
 
         FixedSide Left ->
-            if swiping then
-                "overflow-x-auto overflow-y-hidden [scroll-snap-type:x_mandatory] [direction:rtl]"
-
-            else
-                "overflow-x-hidden overflow-y-hidden [scroll-snap-type:x_mandatory] [direction:rtl]"
+            "overflow-x-auto overflow-y-hidden [scroll-snap-type:x_mandatory] [direction:rtl]"
 
         FixedSide Right ->
-            if swiping then
-                "overflow-x-auto overflow-y-hidden [scroll-snap-type:x_mandatory]"
-
-            else
-                "overflow-x-hidden overflow-y-hidden [scroll-snap-type:x_mandatory]"
+            "overflow-x-auto overflow-y-hidden [scroll-snap-type:x_mandatory]"
 
         DownBelowMd side ->
-            (if swiping then
-                "max-md:overflow-y-auto max-md:overflow-x-hidden max-md:[scroll-snap-type:y_mandatory] "
-
-             else
-                "max-md:overflow-y-hidden max-md:overflow-x-hidden max-md:[scroll-snap-type:y_mandatory] "
-            )
+            "max-md:overflow-y-auto max-md:overflow-x-hidden max-md:[scroll-snap-type:y_mandatory] "
                 ++ (case side of
                         Up ->
-                            if swiping then
-                                "md:overflow-y-auto md:overflow-x-hidden md:[scroll-snap-type:y_mandatory] md:[writing-mode:vertical-rl] md:[direction:rtl]"
-
-                            else
-                                "md:overflow-y-hidden md:overflow-x-hidden md:[scroll-snap-type:y_mandatory] md:[writing-mode:vertical-rl] md:[direction:rtl]"
+                            "md:overflow-y-auto md:overflow-x-hidden md:[scroll-snap-type:y_mandatory] md:[writing-mode:vertical-rl] md:[direction:rtl]"
 
                         Left ->
-                            if swiping then
-                                "md:overflow-x-auto md:overflow-y-hidden md:[scroll-snap-type:x_mandatory] md:[direction:rtl]"
-
-                            else
-                                "md:overflow-x-hidden md:overflow-y-hidden md:[scroll-snap-type:x_mandatory] md:[direction:rtl]"
+                            "md:overflow-x-auto md:overflow-y-hidden md:[scroll-snap-type:x_mandatory] md:[direction:rtl]"
 
                         _ ->
-                            if swiping then
-                                "md:overflow-x-auto md:overflow-y-hidden md:[scroll-snap-type:x_mandatory]"
-
-                            else
-                                "md:overflow-x-hidden md:overflow-y-hidden md:[scroll-snap-type:x_mandatory]"
+                            "md:overflow-x-auto md:overflow-y-hidden md:[scroll-snap-type:x_mandatory]"
                    )
 
 

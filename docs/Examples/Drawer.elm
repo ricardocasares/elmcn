@@ -2,7 +2,7 @@ module Examples.Drawer exposing (..)
 
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (checked, class, for, id, name, type_, value)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onCheck, onClick)
 import State exposing (State)
 import UI.Badge as Badge
 import UI.Button as Button
@@ -17,6 +17,9 @@ import UI.RadioGroup as RadioGroup
 demo : State -> Html State.Msg
 demo state =
     let
+        deliveryTime =
+            State.get "delivery-time" state |> Maybe.withDefault "asap"
+
         deliveryTimes =
             [ { slot = "asap", label = "Standard delivery", desc = "25–35 min · Driver assigned now", badge = Just "Fastest" }
             , { slot = "5-00", label = "5:00 PM – 5:15 PM", desc = "Prep starts at 4:45 PM", badge = Nothing }
@@ -45,7 +48,7 @@ demo state =
                             )
                         , Field.description [] [ text desc ]
                         ]
-                    , RadioGroup.item [ id ("delivery-" ++ slot), name "delivery", value slot, checked (slot == "asap") ]
+                    , RadioGroup.item [ id ("delivery-" ++ slot), name "delivery", value slot, checked (slot == deliveryTime), onCheck (\_ -> State.set "delivery-time" slot) ]
                     ]
                 ]
     in
@@ -57,10 +60,8 @@ demo state =
         , Drawer.new
             |> Drawer.id "delivery"
             |> Drawer.open (State.get "delivery" state == Just "open") (State.set "delivery" "closed")
-            |> Drawer.nonModal
             |> Drawer.right
             |> Drawer.downOnMobile
-            |> Drawer.swipeable
             |> Drawer.title [ text "Pick a delivery time" ]
             |> Drawer.description [ text "We'll prepare your order as soon as possible." ]
             |> Drawer.content
@@ -108,7 +109,7 @@ sides state =
         ]
 
 
-{-| Use `swipeHandle` to render a swipe handle, and `swipeable` to let a swipe drag the drawer. Swipe it past halfway, or flick it toward the edge, to close it, or let go sooner and it settles back.
+{-| Use `swipeHandle` to render a swipe handle. Every drawer can be swiped: past halfway, or flicked toward the edge, it closes, and let go sooner it settles back.
 -}
 swipeHandle : State -> Html State.Msg
 swipeHandle state =
@@ -120,7 +121,7 @@ swipeHandle state =
         , Drawer.new
             |> Drawer.id "swipe-handle"
             |> Drawer.open (State.get "swipe-handle" state == Just "open") (State.set "swipe-handle" "closed")
-            |> Drawer.swipeable
+            |> Drawer.swipeHandle
             |> Drawer.title [ text "Drawer" ]
             |> Drawer.description [ text "Drawer with a swipe handle." ]
             |> Drawer.content
@@ -170,7 +171,6 @@ nested state =
             |> Drawer.open (isOpen "nested-1") (State.set "nested-1" "closed")
             |> Drawer.right
             |> Drawer.downOnMobile
-            |> Drawer.swipeable
             |> Drawer.title [ text "Drawer" ]
             |> Drawer.description [ text "Open another drawer from the same direction." ]
             |> Drawer.content [ placeholder ]
@@ -181,7 +181,6 @@ nested state =
                     |> Drawer.open (isOpen "nested-2") (State.set "nested-2" "closed")
                     |> Drawer.right
                     |> Drawer.downOnMobile
-                    |> Drawer.swipeable
                     |> Drawer.title [ text "Nested Drawer" ]
                     |> Drawer.description [ text "The parent drawer stays mounted behind this one." ]
                     |> Drawer.content [ placeholder ]
@@ -260,7 +259,7 @@ snapPoints state =
             |> Drawer.id "snap-points"
             |> Drawer.open (State.get "snap-points" state == Just "open") (State.set "snap-points" "closed")
             |> Drawer.snapPoints [ 496, 1 ]
-            |> Drawer.swipeable
+            |> Drawer.swipeHandle
             |> Drawer.title [ text "Snap points" ]
             |> Drawer.description [ text "Drag the drawer to snap between a compact peek and a near full-height view." ]
             |> Drawer.content
@@ -321,6 +320,6 @@ responsive state =
                 |> Drawer.title [ text "Edit profile" ]
                 |> Drawer.description [ text "Make changes to your profile here. Click save when you're done." ]
                 |> Drawer.content [ profileForm "responsive-drawer" [ class "p-4" ] ]
-                |> Drawer.toHtml []
+                |> Drawer.toHtml [ class "[&_[data-slot=drawer-header]]:text-left" ]
             ]
         ]
