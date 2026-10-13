@@ -248,7 +248,7 @@
       "type": "registry:item",
       "title": "Dialog",
       "description": "A window overlaid on either the primary window or another dialog window, rendering the content underneath inert.",
-      "docs": "Run `elm install elm/json` as well: the dialog decodes its close event.",
+      "docs": "Run `elm install elm/json` as well: the dialog decodes its close event. Then add `import \"./elmcn-dialog\";` to your JavaScript entry point: it defines the `<elmcn-dialog>` element that opens and closes the dialog.",
       "registryDependencies": [
         "ricardocasares/elmcn/button"
       ],
@@ -263,6 +263,11 @@
           "path": "src/UI/Dialog.elm",
           "type": "registry:file",
           "target": "~/src/UI/Dialog.elm"
+        },
+        {
+          "path": "src/elmcn-dialog.ts",
+          "type": "registry:file",
+          "target": "~/src/elmcn-dialog.ts"
         }
       ]
     },

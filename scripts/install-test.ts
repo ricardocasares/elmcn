@@ -1,6 +1,7 @@
 // Installs every registry item into its own fresh Elm app with the shadcn CLI,
 // then compiles the installed modules. Catches missing registryDependencies
-// and Elm packages that an item forgets to declare.
+// and Elm packages that an item forgets to declare. TypeScript files, such as the
+// dialog's custom element, are type-checked on their own against the DOM.
 //
 // Dependencies point at GitHub (ricardocasares/elmcn/<name>), so the registry is
 // rebuilt into a temp folder with those rewritten to local files. Nothing is fetched
@@ -89,6 +90,11 @@ for (const item of items) {
       const installed = join(app, file.target.replace("~/", ""));
       if (!(await Bun.file(installed).exists())) throw new Error(`${file.target} was not installed`);
       if (installed.endsWith(".elm")) await elmMake(installed, app);
+      if (installed.endsWith(".ts")) {
+        await $`${bin("tsc")} --noEmit --strict --target ESNext --module ESNext --lib ESNext,DOM ${installed}`
+          .cwd(app)
+          .quiet();
+      }
     }
     console.log(`✔ ${item.name}`);
   } catch (error) {

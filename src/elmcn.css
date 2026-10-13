@@ -136,6 +136,31 @@
 }
 
 /*
+  The drawer's backdrop fades in with the drawer's scroll, through a view timeline, and
+  out with a clock when the drawer closes by other means than a swipe. The fade out is
+  its own animation: an animation that moves from a scroll timeline to the clock keeps
+  its progress, and would be over at once.
+*/
+
+@keyframes drawer-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes drawer-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
   Utilities from shadcn's `tailwind.css` that the attachment uses: a shimmer on the title
   while it uploads, and a scroll fade plus hidden scrollbar on the attachment group. The
   drawer demo uses the vertical scroll fade.

@@ -2,7 +2,9 @@ module Examples.Attachment exposing (..)
 
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (alt, attribute, class, href, rel, src, target)
+import Html.Events exposing (onClick)
 import Phosphor exposing (IconWeight(..))
+import State exposing (State)
 import UI.Attachment as Attachment
 import UI.Button as Button
 import UI.Dialog as Dialog
@@ -237,10 +239,10 @@ group =
         ]
 
 
-{-| `button` with `Dialog.opens` makes the whole attachment open a dialog. The trigger fills the attachment behind the actions, so the actions stay independently clickable.
+{-| `button` with an `onClick` makes the whole attachment open a dialog. The trigger fills the attachment behind the actions, so the actions stay independently clickable.
 -}
-trigger : Html msg
-trigger =
+trigger : State -> Html State.Msg
+trigger state =
     div [ class "mx-auto w-full max-w-sm" ]
         [ Attachment.new
             |> Attachment.title "research-summary.pdf"
@@ -256,10 +258,11 @@ trigger =
                     |> Button.label "Remove research-summary.pdf"
                     |> Attachment.action []
                 ]
-            |> Attachment.button (attribute "aria-label" "Preview research-summary.pdf" :: Dialog.opens "attachment-preview")
+            |> Attachment.button [ attribute "aria-label" "Preview research-summary.pdf", onClick (State.set "attachment-preview" "open") ]
             |> Attachment.toHtml [ class "w-full" ]
         , Dialog.new
             |> Dialog.id "attachment-preview"
+            |> Dialog.open (State.get "attachment-preview" state == Just "open") (State.set "attachment-preview" "closed")
             |> Dialog.title [ text "research-summary.pdf" ]
             |> Dialog.description [ text "The attachment trigger fills the card and opens the dialog, while the actions stay independently clickable above it." ]
             |> Dialog.toHtml [ class "sm:max-w-md" ]

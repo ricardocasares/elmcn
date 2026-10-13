@@ -2,6 +2,7 @@ module Examples.Drawer exposing (..)
 
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (checked, class, for, id, name, type_, value)
+import Html.Events exposing (onClick)
 import State exposing (State)
 import UI.Badge as Badge
 import UI.Button as Button
@@ -50,6 +51,7 @@ demo state =
     in
     Drawer.new
         |> Drawer.id "delivery"
+        |> Drawer.nonModal
         |> Drawer.trigger
             (Button.new
                 |> Button.text "Open Drawer"
@@ -102,7 +104,7 @@ sides =
         |> Drawer.toHtml []
 
 
-{-| Use `swipeHandle` to render a swipe handle, and `swipeable` to let it drag the drawer. Swipe it a quarter of the way out to close it, or let go sooner and it springs back.
+{-| Use `swipeHandle` to render a swipe handle, and `swipeable` to let a swipe drag the drawer. Swipe it past halfway, or flick it toward the edge, to close it, or let go sooner and it settles back.
 -}
 swipeHandle : State -> Html State.Msg
 swipeHandle state =
@@ -228,7 +230,7 @@ nonModal =
         |> Drawer.toHtml []
 
 
-{-| Use `snapPoints` to snap a drawer to preset heights when a swipe ends. Numbers up to `1` are fractions of the viewport height, bigger ones are pixels. A swipe well past the smallest snap point closes the drawer.
+{-| Use `snapPoints` to snap a drawer to preset heights when a swipe ends. Numbers up to `1` are fractions of the viewport height, bigger ones are pixels. The drawer opens at the first one, and a swipe from the smallest one toward the edge closes it.
 -}
 snapPoints : State -> Html State.Msg
 snapPoints state =
@@ -257,8 +259,8 @@ snapPoints state =
 
 {-| Combine a `Dialog` and a `Drawer` to make a responsive dialog: a `Dialog` from `md` up, a `Drawer` below it.
 -}
-responsive : Html msg
-responsive =
+responsive : State -> Html State.Msg
+responsive state =
     let
         profileForm prefix attrs =
             Html.form (class "grid items-start gap-6" :: attrs)
@@ -277,13 +279,13 @@ responsive =
     in
     div []
         [ div [ class "max-md:hidden md:contents" ]
-            [ Dialog.new
+            [ Button.new
+                |> Button.text "Edit Profile"
+                |> Button.outline
+                |> Button.toHtml [ onClick (State.set "responsive-dialog" "open") ]
+            , Dialog.new
                 |> Dialog.id "responsive-dialog"
-                |> Dialog.trigger
-                    (Button.new
-                        |> Button.text "Edit Profile"
-                        |> Button.outline
-                    )
+                |> Dialog.open (State.get "responsive-dialog" state == Just "open") (State.set "responsive-dialog" "closed")
                 |> Dialog.title [ text "Edit profile" ]
                 |> Dialog.description [ text "Make changes to your profile here. Click save when you're done." ]
                 |> Dialog.content [ profileForm "responsive-dialog" [] ]

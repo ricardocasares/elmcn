@@ -274,9 +274,9 @@ link attrs (Attachment config) =
 {-| A `<button>` covering the attachment, for an attachment that opens a dialog or does something on click. Pass an `aria-label`:
 
     Attachment.button
-        (attribute "aria-label" "Preview research-summary.pdf"
-            :: Dialog.opens "research-summary"
-        )
+        [ attribute "aria-label" "Preview research-summary.pdf"
+        , onClick (SetPreviewing True)
+        ]
 
 -}
 button : List (Attribute msg) -> Attachment status msg -> Attachment status msg

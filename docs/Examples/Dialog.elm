@@ -2,6 +2,7 @@ module Examples.Dialog exposing (..)
 
 import Html exposing (Html, div, p, text)
 import Html.Attributes exposing (class, dir, for, id, readonly, tabindex, value)
+import Html.Events exposing (onClick)
 import State exposing (State)
 import UI.Button as Button
 import UI.Dialog as Dialog
@@ -10,145 +11,156 @@ import UI.Input as Input
 import UI.Label as Label
 
 
-demo : Html msg
-demo =
-    Dialog.new
-        |> Dialog.id "edit-profile"
-        |> Dialog.trigger
-            (Button.new
-                |> Button.text "Open Dialog"
-                |> Button.outline
-            )
-        |> Dialog.title [ text "Edit profile" ]
-        |> Dialog.description [ text "Make changes to your profile here. Click save when you're done." ]
-        |> Dialog.content
-            [ Field.group []
-                [ Field.view []
-                    [ Label.view [ for "edit-profile-name" ] [ text "Name" ]
-                    , Input.view [ id "edit-profile-name", value "Pedro Duarte" ]
-                    ]
-                , Field.view []
-                    [ Label.view [ for "edit-profile-username" ] [ text "Username" ]
-                    , Input.view [ id "edit-profile-username", value "@peduarte" ]
+demo : State -> Html State.Msg
+demo state =
+    div []
+        [ Button.new
+            |> Button.text "Open Dialog"
+            |> Button.outline
+            |> Button.toHtml [ onClick (State.set "edit-profile" "open") ]
+        , Dialog.new
+            |> Dialog.id "edit-profile"
+            |> Dialog.modal
+            |> Dialog.open (State.get "edit-profile" state == Just "open") (State.set "edit-profile" "closed")
+            |> Dialog.title [ text "Edit profile" ]
+            |> Dialog.description [ text "Make changes to your profile here. Click save when you're done." ]
+            |> Dialog.content
+                [ Field.group []
+                    [ Field.view []
+                        [ Label.view [ for "edit-profile-name" ] [ text "Name" ]
+                        , Input.view [ id "edit-profile-name", value "Pedro Duarte" ]
+                        ]
+                    , Field.view []
+                        [ Label.view [ for "edit-profile-username" ] [ text "Username" ]
+                        , Input.view [ id "edit-profile-username", value "@peduarte" ]
+                        ]
                     ]
                 ]
-            ]
-        |> Dialog.footer []
-            [ Button.new
-                |> Button.text "Cancel"
-                |> Button.outline
-                |> Button.toHtml (tabindex 0 :: Dialog.closes "edit-profile")
-            , Button.new
-                |> Button.text "Save changes"
-                |> Button.toHtml (tabindex 0 :: Dialog.closes "edit-profile")
-            ]
-        |> Dialog.toHtml [ class "sm:max-w-sm" ]
+            |> Dialog.footer []
+                [ Button.new
+                    |> Button.text "Cancel"
+                    |> Button.outline
+                    |> Button.toHtml [ tabindex 0, onClick (State.set "edit-profile" "closed") ]
+                , Button.new
+                    |> Button.text "Save changes"
+                    |> Button.toHtml [ tabindex 0, onClick (State.set "edit-profile" "closed") ]
+                ]
+            |> Dialog.toHtml [ class "sm:max-w-sm" ]
+        ]
 
 
 {-| Replace the default close control with your own button.
 -}
-customCloseButton : Html msg
-customCloseButton =
-    Dialog.new
-        |> Dialog.id "share"
-        |> Dialog.trigger
-            (Button.new
-                |> Button.text "Share"
-                |> Button.outline
-            )
-        |> Dialog.title [ text "Share link" ]
-        |> Dialog.description [ text "Anyone who has this link will be able to view this." ]
-        |> Dialog.content
-            [ div [ class "flex items-center gap-2" ]
-                [ div [ class "grid flex-1 gap-2" ]
-                    [ Label.view [ for "share-link", class "sr-only" ] [ text "Link" ]
-                    , Input.view [ id "share-link", value "https://ui.shadcn.com/docs/installation", readonly True ]
+customCloseButton : State -> Html State.Msg
+customCloseButton state =
+    div []
+        [ Button.new
+            |> Button.text "Share"
+            |> Button.outline
+            |> Button.toHtml [ onClick (State.set "share" "open") ]
+        , Dialog.new
+            |> Dialog.id "share"
+            |> Dialog.open (State.get "share" state == Just "open") (State.set "share" "closed")
+            |> Dialog.title [ text "Share link" ]
+            |> Dialog.description [ text "Anyone who has this link will be able to view this." ]
+            |> Dialog.content
+                [ div [ class "flex items-center gap-2" ]
+                    [ div [ class "grid flex-1 gap-2" ]
+                        [ Label.view [ for "share-link", class "sr-only" ] [ text "Link" ]
+                        , Input.view [ id "share-link", value "https://ui.shadcn.com/docs/installation", readonly True ]
+                        ]
                     ]
                 ]
-            ]
-        |> Dialog.footer [ class "sm:justify-start" ]
-            [ Button.new
-                |> Button.text "Close"
-                |> Button.toHtml (tabindex 0 :: Dialog.closes "share")
-            ]
-        |> Dialog.toHtml [ class "sm:max-w-md" ]
+            |> Dialog.footer [ class "sm:justify-start" ]
+                [ Button.new
+                    |> Button.text "Close"
+                    |> Button.toHtml [ tabindex 0, onClick (State.set "share" "closed") ]
+                ]
+            |> Dialog.toHtml [ class "sm:max-w-md" ]
+        ]
 
 
 {-| Use `hideCloseButton` to hide the close button.
 -}
-noCloseButton : Html msg
-noCloseButton =
-    Dialog.new
-        |> Dialog.id "no-close-button"
-        |> Dialog.trigger
-            (Button.new
-                |> Button.text "No Close Button"
-                |> Button.outline
-            )
-        |> Dialog.hideCloseButton
-        |> Dialog.title [ text "No Close Button" ]
-        |> Dialog.description [ text "This dialog doesn't have a close button in the top-right corner." ]
-        |> Dialog.toHtml []
+noCloseButton : State -> Html State.Msg
+noCloseButton state =
+    div []
+        [ Button.new
+            |> Button.text "No Close Button"
+            |> Button.outline
+            |> Button.toHtml [ onClick (State.set "no-close-button" "open") ]
+        , Dialog.new
+            |> Dialog.id "no-close-button"
+            |> Dialog.open (State.get "no-close-button" state == Just "open") (State.set "no-close-button" "closed")
+            |> Dialog.hideCloseButton
+            |> Dialog.title [ text "No Close Button" ]
+            |> Dialog.description [ text "This dialog doesn't have a close button in the top-right corner." ]
+            |> Dialog.toHtml []
+        ]
 
 
 {-| Keep actions visible while the content scrolls.
 -}
-stickyFooter : Html msg
-stickyFooter =
-    Dialog.new
-        |> Dialog.id "sticky-footer"
-        |> Dialog.trigger
-            (Button.new
-                |> Button.text "Sticky Footer"
-                |> Button.outline
-            )
-        |> Dialog.title [ text "Sticky Footer" ]
-        |> Dialog.description [ text "This dialog has a sticky footer that stays visible while the content scrolls." ]
-        |> Dialog.content
-            [ div [ class "-mx-4 max-h-[50vh] overflow-y-auto px-4" ]
-                (List.repeat 10 (p [ class "mb-4 leading-normal" ] [ text lorem ]))
-            ]
-        |> Dialog.footer []
-            [ Button.new
-                |> Button.text "Close"
-                |> Button.outline
-                |> Button.toHtml (tabindex 0 :: Dialog.closes "sticky-footer")
-            ]
-        |> Dialog.toHtml []
+stickyFooter : State -> Html State.Msg
+stickyFooter state =
+    div []
+        [ Button.new
+            |> Button.text "Sticky Footer"
+            |> Button.outline
+            |> Button.toHtml [ onClick (State.set "sticky-footer" "open") ]
+        , Dialog.new
+            |> Dialog.id "sticky-footer"
+            |> Dialog.open (State.get "sticky-footer" state == Just "open") (State.set "sticky-footer" "closed")
+            |> Dialog.title [ text "Sticky Footer" ]
+            |> Dialog.description [ text "This dialog has a sticky footer that stays visible while the content scrolls." ]
+            |> Dialog.content
+                [ div [ class "-mx-4 max-h-[50vh] overflow-y-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" ]
+                    (List.repeat 10 (p [ class "mb-4 leading-normal" ] [ text lorem ]))
+                ]
+            |> Dialog.footer []
+                [ Button.new
+                    |> Button.text "Close"
+                    |> Button.outline
+                    |> Button.toHtml [ tabindex 0, onClick (State.set "sticky-footer" "closed") ]
+                ]
+            |> Dialog.toHtml []
+        ]
 
 
 {-| Long content can scroll while the header stays in view.
 -}
-scrollableContent : Html msg
-scrollableContent =
-    Dialog.new
-        |> Dialog.id "scrollable-content"
-        |> Dialog.trigger
-            (Button.new
-                |> Button.text "Scrollable Content"
-                |> Button.outline
-            )
-        |> Dialog.title [ text "Scrollable Content" ]
-        |> Dialog.description [ text "This is a dialog with scrollable content." ]
-        |> Dialog.content
-            [ div [ class "-mx-4 max-h-[50vh] overflow-y-auto px-4" ]
-                (List.repeat 10 (p [ class "mb-4 leading-normal" ] [ text lorem ]))
-            ]
-        |> Dialog.toHtml []
+scrollableContent : State -> Html State.Msg
+scrollableContent state =
+    div []
+        [ Button.new
+            |> Button.text "Scrollable Content"
+            |> Button.outline
+            |> Button.toHtml [ onClick (State.set "scrollable-content" "open") ]
+        , Dialog.new
+            |> Dialog.id "scrollable-content"
+            |> Dialog.open (State.get "scrollable-content" state == Just "open") (State.set "scrollable-content" "closed")
+            |> Dialog.title [ text "Scrollable Content" ]
+            |> Dialog.description [ text "This is a dialog with scrollable content." ]
+            |> Dialog.content
+                [ div [ class "-mx-4 max-h-[50vh] overflow-y-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" ]
+                    (List.repeat 10 (p [ class "mb-4 leading-normal" ] [ text lorem ]))
+                ]
+            |> Dialog.toHtml []
+        ]
 
 
 {-| Set `dir "rtl"` on the dialog to lay it out right to left.
 -}
-rtl : Html msg
-rtl =
+rtl : State -> Html State.Msg
+rtl state =
     div [ dir "rtl" ]
-        [ Dialog.new
+        [ Button.new
+            |> Button.text "فتح الحوار"
+            |> Button.outline
+            |> Button.toHtml [ onClick (State.set "edit-profile-rtl" "open") ]
+        , Dialog.new
             |> Dialog.id "edit-profile-rtl"
-            |> Dialog.trigger
-                (Button.new
-                    |> Button.text "فتح الحوار"
-                    |> Button.outline
-                )
+            |> Dialog.open (State.get "edit-profile-rtl" state == Just "open") (State.set "edit-profile-rtl" "closed")
             |> Dialog.title [ text "تعديل الملف الشخصي" ]
             |> Dialog.description [ text "قم بإجراء تغييرات على ملفك الشخصي هنا. انقر فوق حفظ عند الانتهاء." ]
             |> Dialog.content
@@ -167,46 +179,95 @@ rtl =
                 [ Button.new
                     |> Button.text "إلغاء"
                     |> Button.outline
-                    |> Button.toHtml (tabindex 0 :: Dialog.closes "edit-profile-rtl")
+                    |> Button.toHtml [ tabindex 0, onClick (State.set "edit-profile-rtl" "closed") ]
                 , Button.new
                     |> Button.text "حفظ التغييرات"
-                    |> Button.toHtml (tabindex 0 :: Dialog.closes "edit-profile-rtl")
+                    |> Button.toHtml [ tabindex 0, onClick (State.set "edit-profile-rtl" "closed") ]
                 ]
             |> Dialog.toHtml [ class "sm:max-w-sm", dir "rtl" ]
         ]
 
 
-{-| `opens` puts the trigger anywhere on the page, and `onClose` reports when the dialog closes, however it was closed.
+{-| `modal` keeps the dialog open when the overlay is tapped. Escape and the buttons still close it.
 -}
-closeEvent : State -> Html State.Msg
-closeEvent state =
-    let
-        closed =
-            State.get "dialog-closed" state
-                |> Maybe.withDefault "0"
-
-        count =
-            String.toInt closed
-                |> Maybe.withDefault 0
-    in
-    div [ class "flex flex-col items-center gap-4" ]
-        [ p [ class "text-sm text-muted-foreground" ]
-            [ text ("Closed " ++ closed ++ " times") ]
-        , Button.new
-            |> Button.text "Open"
+modal : State -> Html State.Msg
+modal state =
+    div []
+        [ Button.new
+            |> Button.text "Modal"
             |> Button.outline
-            |> Button.toHtml (Dialog.opens "close-event")
+            |> Button.toHtml [ onClick (State.set "modal" "open") ]
         , Dialog.new
-            |> Dialog.id "close-event"
-            |> Dialog.onClose (State.set "dialog-closed" (String.fromInt (count + 1)))
-            |> Dialog.title [ text "Are you sure?" ]
-            |> Dialog.description [ text "Close this dialog with the X, Escape, the backdrop or the button below. Each one counts." ]
+            |> Dialog.id "modal"
+            |> Dialog.open (State.get "modal" state == Just "open") (State.set "modal" "closed")
+            |> Dialog.modal
+            |> Dialog.title [ text "Modal" ]
+            |> Dialog.description [ text "Tapping outside won't close this dialog. Press Escape or use a button." ]
             |> Dialog.footer []
                 [ Button.new
-                    |> Button.text "Continue"
-                    |> Button.toHtml (tabindex 0 :: Dialog.closes "close-event")
+                    |> Button.text "Close"
+                    |> Button.outline
+                    |> Button.toHtml [ tabindex 0, onClick (State.set "modal" "closed") ]
                 ]
             |> Dialog.toHtml []
+        ]
+
+
+{-| Put a dialog in another's `content` to open it on top. Escape and a tap outside close the top one first, and only one overlay dims the page.
+-}
+nested : State -> Html State.Msg
+nested state =
+    div []
+        [ Button.new
+            |> Button.text "Nested"
+            |> Button.outline
+            |> Button.toHtml [ onClick (State.set "nested" "open") ]
+        , Dialog.new
+            |> Dialog.id "nested"
+            |> Dialog.open (State.get "nested" state == Just "open") (State.set "nested" "closed")
+            |> Dialog.title [ text "Notifications" ]
+            |> Dialog.description [ text "You are all caught up. Good job!" ]
+            |> Dialog.content
+                [ Dialog.new
+                    |> Dialog.id "nested-customize"
+                    |> Dialog.open (State.get "nested-customize" state == Just "open") (State.set "nested-customize" "closed")
+                    |> Dialog.title [ text "Customize notifications" ]
+                    |> Dialog.description [ text "Review your settings here." ]
+                    |> Dialog.content
+                        [ Dialog.new
+                            |> Dialog.id "nested-advanced"
+                            |> Dialog.open (State.get "nested-advanced" state == Just "open") (State.set "nested-advanced" "closed")
+                            |> Dialog.title [ text "Advanced settings" ]
+                            |> Dialog.description [ text "Fine-tune when and how notifications reach you." ]
+                            |> Dialog.footer []
+                                [ Button.new
+                                    |> Button.text "Close"
+                                    |> Button.outline
+                                    |> Button.toHtml [ tabindex 0, onClick (State.set "nested-advanced" "closed") ]
+                                ]
+                            |> Dialog.toHtml [ class "sm:max-w-lg" ]
+                        ]
+                    |> Dialog.footer []
+                        [ Button.new
+                            |> Button.text "Close"
+                            |> Button.outline
+                            |> Button.toHtml [ tabindex 0, onClick (State.set "nested-customize" "closed") ]
+                        , Button.new
+                            |> Button.text "Advanced"
+                            |> Button.toHtml [ tabindex 0, onClick (State.set "nested-advanced" "open") ]
+                        ]
+                    |> Dialog.toHtml []
+                ]
+            |> Dialog.footer []
+                [ Button.new
+                    |> Button.text "Close"
+                    |> Button.outline
+                    |> Button.toHtml [ tabindex 0, onClick (State.set "nested" "closed") ]
+                , Button.new
+                    |> Button.text "Customize"
+                    |> Button.toHtml [ tabindex 0, onClick (State.set "nested-customize" "open") ]
+                ]
+            |> Dialog.toHtml [ class "sm:max-w-md" ]
         ]
 
 

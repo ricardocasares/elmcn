@@ -6,7 +6,7 @@ module UI.Drawer exposing
     , title, description, content, footer
     , down, up, left, right, downOnMobile
     , swipeHandle, nonModal, height, width, onClose
-    , State, Msg, init, update, swipeable, snapPoints
+    , State, Msg, init, update, dismissed, swipeable, snapPoints
     , toHtml
     )
 
@@ -39,7 +39,7 @@ The drawer is a native `<dialog>` opened by its trigger through an invoker comma
 
 The open state lives in the browser. Give the drawer `onClose` to be told when it closes.
 
-The [swipe handle](#swipeHandle) is a visual cue on its own. Made [`swipeable`](#swipeable), it follows the finger, and when let go it springs back, snaps to the nearest of the [`snapPoints`](#snapPoints), or closes the drawer if it was pulled far enough. That needs a `State` in your model and `update` in your update, but no JavaScript.
+The [swipe handle](#swipeHandle) is a visual cue on its own. Made [`swipeable`](#swipeable), the drawer follows a swipe like a scrolling page does, then settles at the nearest of its [`snapPoints`](#snapPoints) or closes. That needs a `State` in your model and `update` in your update, but no JavaScript.
 
 @docs Drawer, Ready, NeedsId
 
@@ -82,6 +82,8 @@ The last one wins. A vertical drawer sizes itself to its content, capped at `cal
 
 # Swiping
 
+A swipe is a scroll gesture, handled by the browser rather than by Elm. The drawer sits in a scroller that is hidden but snaps to two places, closed and open, so a finger or a trackpad drags it with momentum and rubber band, off the main thread, and the backdrop fades in step with it through a CSS view timeline. A swipe that ends closed removes the open drawer, and the only thing Elm sees of it is one message.
+
 Keep a `State` in your model, route its messages through `update`, and give both to the drawer:
 
     type alias Model =
@@ -102,9 +104,11 @@ Keep a `State` in your model, route its messages through `update`, and give both
             |> Drawer.swipeable model.drawer DrawerMsg
             |> Drawer.toHtml []
 
-One `State` can serve every drawer on the page, since only one is dragged at a time.
+One `State` can serve every drawer on the page. Without `swipeable` the drawer slides in the same way, but the scroller can't be dragged.
 
-@docs State, Msg, init, update, swipeable, snapPoints
+A mouse can't drag the drawer, since a mouse doesn't scroll by dragging: the wheel and a trackpad work, and touch is the primary input. Browsers that don't support `scrollend` or view timelines keep a drawer that opens and closes, without the swipe dismissal or the synced backdrop.
+
+@docs State, Msg, init, update, dismissed, swipeable, snapPoints
 
 
 # Rendering
@@ -154,44 +158,19 @@ type Side
     | Right
 
 
-{-| Where a swipe is, if one is in progress, and which snap point the drawer sits at.
+{-| How many times each drawer has been swiped away.
+
+A swiped drawer is still an open `<dialog>`, and nothing but JavaScript can close that, so it is replaced by a fresh closed one: the number is part of its key.
+
 -}
 type State
-    = State
-        { drag : Maybe Drag
-        , snap : Maybe Int
-        , closing : Maybe Closing
-        , generations : Dict String Int
-        }
+    = State (Dict String Int)
 
 
-type alias Drag =
-    { id : String
-    , side : Side
-    , start : Float
-    , current : Float
-    , size : Float
-    , viewport : Float
-    }
-
-
-{-| A drawer sliding out after a swipe, until its panel's transition ends.
--}
-type alias Closing =
-    { id : String
-    , side : Side
-    , size : Float
-    }
-
-
-{-| What the handle and the dialog send while swiping.
+{-| What a swipeable drawer sends when a swipe closes it.
 -}
 type Msg
-    = Start Drag
-    | Move Float
-    | End (List Float)
-    | Cancel
-    | Closed String
+    = Dismissed String
 
 
 {-| The drawer can be rendered.
@@ -330,6 +309,9 @@ description children (Drawer config) =
 
 
 {-| The body of the drawer, between the header and the footer. The children go straight into the drawer's flex column without padding, so a single `div [ class "flex-1 p-4" ]` is the usual shape.
+
+A scrollable child (`overflow-y-auto`) chains to the drawer once it is scrolled to its start, so pulling it down further swipes the drawer away, like on a phone.
+
 -}
 content : List (Html msg) -> Drawer id msg -> Drawer id msg
 content children (Drawer config) =
@@ -423,7 +405,7 @@ width value (Drawer config) =
     Drawer { config | width = Just value }
 
 
-{-| Sent when the drawer closes, however it was closed.
+{-| Sent when the drawer closes, however it was closed except by a swipe: see [`dismissed`](#dismissed).
 -}
 onClose : msg -> Drawer id msg -> Drawer id msg
 onClose msg (Drawer config) =
@@ -434,90 +416,40 @@ onClose msg (Drawer config) =
 -- SWIPING
 
 
-{-| No swipe in progress, at the first snap point.
+{-| No drawer has been swiped away yet.
 -}
 init : State
 init =
-    State { drag = Nothing, snap = Nothing, closing = Nothing, generations = Dict.empty }
+    State Dict.empty
 
 
-{-| Follows a swipe, and when it ends either closes the drawer or picks the nearest snap point.
+{-| Replaces a drawer that was swiped away with a closed one, ready to open again.
 -}
 update : Msg -> State -> State
-update msg (State state) =
-    case msg of
-        Start drag ->
-            State { state | drag = Just drag }
-
-        Move position ->
-            State { state | drag = Maybe.map (\drag -> { drag | current = position }) state.drag }
-
-        End points ->
-            case state.drag of
-                Just drag ->
-                    if dismisses points drag then
-                        State { state | drag = Nothing, closing = Just { id = drag.id, side = drag.side, size = drag.size } }
-
-                    else if List.isEmpty points then
-                        State { state | drag = Nothing }
-
-                    else
-                        State { state | drag = Nothing, snap = nearestSnapPoint points drag }
-
-                Nothing ->
-                    State state
-
-        Cancel ->
-            State { state | drag = Nothing }
-
-        Closed drawerId ->
-            -- The slide out is over: the next render replaces the dialog with a fresh,
-            -- closed one, which is how the open one leaves the top layer.
-            State
-                { state
-                    | closing =
-                        if Maybe.map .id state.closing == Just drawerId then
-                            Nothing
-
-                        else
-                            state.closing
-                    , generations = Dict.update drawerId (Maybe.withDefault 0 >> (+) 1 >> Just) state.generations
-                }
+update (Dismissed drawerId) (State generations) =
+    State (Dict.update drawerId (Maybe.withDefault 0 >> (+) 1 >> Just) generations)
 
 
-{-| A swipe a quarter of the way out closes a drawer. With snap points, it is a swipe past the smallest one by a quarter of its height.
+{-| The `id` of the drawer a message is about. A swiped drawer is replaced rather than closed, so its `close` event never fires and `onClose` is not sent. Do here whatever `onClose` would have done:
+
+    DrawerMsg drawerMsg ->
+        ( { model | drawer = Drawer.update drawerMsg model.drawer }
+        , if Drawer.dismissed drawerMsg == "goal" then
+            saveGoal model
+
+          else
+            Cmd.none
+        )
+
 -}
-dismisses : List Float -> Drag -> Bool
-dismisses points drag =
-    let
-        delta =
-            drag.current - drag.start
-
-        towardEdge =
-            case drag.side of
-                Down ->
-                    delta
-
-                Right ->
-                    delta
-
-                Up ->
-                    -delta
-
-                Left ->
-                    -delta
-    in
-    case List.minimum (List.map (snapPointPx drag.viewport) points) of
-        Nothing ->
-            towardEdge > drag.size / 4
-
-        Just smallest ->
-            drag.size - towardEdge < smallest * 0.75
+dismissed : Msg -> String
+dismissed (Dismissed drawerId) =
+    drawerId
 
 
-{-| Lets the swipe handle drag the drawer. It shows the handle, and needs the `State` from your model and a way to wrap its messages. Let go a quarter of the way out, the drawer closes; let go sooner, it springs back or snaps to the nearest of the [`snapPoints`](#snapPoints).
+{-| Lets a swipe drag the drawer, and shows the swipe handle. It needs the `State` from your model and a way to wrap its messages. Let go a little over halfway out, or flick it toward its edge, and the drawer closes; let go sooner and it settles back, or at the nearest of the [`snapPoints`](#snapPoints).
 
-A drawer closed by a swipe slides out, then its `<dialog>` is replaced by a closed one, since nothing else can close a modal dialog without JavaScript. The `onClose` message is still sent, but focus is not given back to the trigger.
+A drawer closed by a swipe is already off screen, so its `<dialog>` is replaced by a closed one, since nothing else can close a modal dialog without JavaScript. Focus is not given back to the trigger, and `onClose` is not sent; see [`dismissed`](#dismissed).
 
 -}
 swipeable : State -> (Msg -> msg) -> Drawer id msg -> Drawer id msg
@@ -525,44 +457,16 @@ swipeable state toMsg (Drawer config) =
     Drawer { config | handle = True, swipe = Just ( state, toMsg ) }
 
 
-{-| Heights a vertical drawer snaps to when a swipe ends, instead of sizing itself to its content. A number up to `1` is a fraction of the viewport height, and a bigger one is in pixels. The drawer opens at the first one.
+{-| Heights a vertical drawer settles at when a swipe ends, instead of sizing itself to its content. A number up to `1` is a fraction of the viewport height, and a bigger one is in pixels. The drawer opens at the first one, and is as tall as the viewport behind its visible part.
 
     Drawer.snapPoints [ 496, 1 ]
+
+A swipe from the smallest point toward the edge still closes the drawer. Side drawers ignore snap points.
 
 -}
 snapPoints : List Float -> Drawer id msg -> Drawer id msg
 snapPoints points (Drawer config) =
     Drawer { config | snapPoints = points }
-
-
-nearestSnapPoint : List Float -> Drag -> Maybe Int
-nearestSnapPoint points drag =
-    let
-        size =
-            case drag.side of
-                Down ->
-                    drag.size + drag.start - drag.current
-
-                Up ->
-                    drag.size + drag.current - drag.start
-
-                _ ->
-                    drag.size
-    in
-    points
-        |> List.indexedMap (\index point -> ( index, abs (snapPointPx drag.viewport point - size) ))
-        |> List.sortBy Tuple.second
-        |> List.head
-        |> Maybe.map Tuple.first
-
-
-snapPointPx : Float -> Float -> Float
-snapPointPx viewport point =
-    if point <= 1 then
-        point * viewport
-
-    else
-        point
 
 
 snapPointCss : Float -> String
@@ -574,132 +478,30 @@ snapPointCss point =
         String.fromFloat point ++ "px"
 
 
-{-| How far the panel follows the pointer. Without snap points, pulling the drawer
-further open is damped, since there is nowhere to go. With them, it stops at the
-top of the viewport.
+{-| Only a scroll that ended at the closed position of a drawer that is still open counts.
+
+The drawer scrolls to 0 when it is closed, and a drawer that closes any other way, or is not open yet, rests there too. The scroll offset is negative in the directions that scroll backwards, and one axis is always 0.
+
 -}
-swipeOffset : List Float -> Drag -> Float
-swipeOffset points drag =
-    let
-        delta =
-            drag.current - drag.start
-    in
-    if List.isEmpty points then
-        let
-            opening =
-                case drag.side of
-                    Down ->
-                        delta < 0
-
-                    Up ->
-                        delta > 0
-
-                    Left ->
-                        delta > 0
-
-                    Right ->
-                        delta < 0
-        in
-        if opening then
-            delta * 0.2
-
-        else
-            delta
-
-    else
-        case drag.side of
-            Down ->
-                max delta (drag.size - drag.viewport)
-
-            Up ->
-                min delta (drag.viewport - drag.size)
-
-            _ ->
-                delta
-
-
-{-| Just past the edge, like the closed transform of the slide in.
--}
-closedOffset : Closing -> Float
-closedOffset out =
-    case out.side of
-        Down ->
-            out.size + 2
-
-        Right ->
-            out.size + 2
-
-        Up ->
-            -(out.size + 2)
-
-        Left ->
-            -(out.size + 2)
-
-
-isVertical : Side -> Bool
-isVertical side =
-    side == Down || side == Up
-
-
-{-| Reads the pointer, the panel the handle sits in and the viewport off the event, and
-settles the side a `downOnMobile` drawer is on from the viewport width.
--}
-startDecoder : String -> Layout -> Decoder Drag
-startDecoder drawerId layout =
-    Decode.map6
-        (\clientX clientY panelWidth panelHeight innerWidth innerHeight ->
-            let
-                side =
-                    case layout of
-                        FixedSide fixed ->
-                            fixed
-
-                        DownBelowMd fixed ->
-                            if innerWidth < 768 then
-                                Down
-
-                            else
-                                fixed
-            in
-            if isVertical side then
-                { id = drawerId, side = side, start = clientY, current = clientY, size = panelHeight, viewport = innerHeight }
+dismissDecoder : Bool -> msg -> Decoder msg
+dismissDecoder modal msg =
+    Decode.map3
+        (\scrollTop scrollLeft open ->
+            if abs scrollTop <= 1 && abs scrollLeft <= 1 && open then
+                Decode.succeed msg
 
             else
-                { id = drawerId, side = side, start = clientX, current = clientX, size = panelWidth, viewport = innerWidth }
+                Decode.fail "not swiped away"
         )
-        (Decode.field "clientX" Decode.float)
-        (Decode.field "clientY" Decode.float)
-        (Decode.at [ "currentTarget", "parentElement", "clientWidth" ] Decode.float)
-        (Decode.at [ "currentTarget", "parentElement", "clientHeight" ] Decode.float)
-        (Decode.at [ "view", "innerWidth" ] Decode.float)
-        (Decode.at [ "view", "innerHeight" ] Decode.float)
-
-
-{-| Only the panel's slide counts, not the backdrop's fade or a nested drawer's.
--}
-slideEndDecoder : msg -> Decoder msg
-slideEndDecoder msg =
-    Decode.field "propertyName" Decode.string
-        |> Decode.andThen
-            (\property ->
-                if property == "translate" then
-                    Decode.succeed msg
-
-                else
-                    Decode.fail "not the slide"
-            )
-
-
-moveDecoder : Side -> Decoder Float
-moveDecoder side =
-    Decode.field
-        (if isVertical side then
-            "clientY"
+        (Decode.at [ "currentTarget", "scrollTop" ] Decode.float)
+        (Decode.at [ "currentTarget", "scrollLeft" ] Decode.float)
+        (if modal then
+            Decode.at [ "currentTarget", "parentNode", "open" ] Decode.bool
 
          else
-            "clientX"
+            Decode.succeed True
         )
-        Decode.float
+        |> Decode.andThen identity
 
 
 
@@ -732,104 +534,48 @@ toHtml attrs (Drawer config) =
             else
                 FixedSide config.side
 
-        drag =
-            config.swipe
-                |> Maybe.andThen (\( State state, _ ) -> state.drag)
-                |> Maybe.andThen (\swipe -> ifThis swipe.id swipe)
+        -- Side drawers have no use for snap points.
+        points =
+            case layout of
+                FixedSide Left ->
+                    []
 
-        closing =
-            config.swipe
-                |> Maybe.andThen (\( State state, _ ) -> state.closing)
-                |> Maybe.andThen (\swipe -> ifThis swipe.id swipe)
+                FixedSide Right ->
+                    []
 
-        ifThis drawerId value =
-            if drawerId == config.id then
-                Just value
+                _ ->
+                    config.snapPoints
 
-            else
-                Nothing
+        swiping =
+            case config.swipe of
+                Just _ ->
+                    True
+
+                Nothing ->
+                    False
 
         generation =
             config.swipe
-                |> Maybe.andThen (\( State state, _ ) -> Dict.get config.id state.generations)
+                |> Maybe.andThen (\( State generations, _ ) -> Dict.get config.id generations)
                 |> Maybe.withDefault 0
-
-        -- Where the panel sits along its axis: under the pointer during a swipe, and
-        -- just past its edge while sliding out.
-        swipeVar side offset =
-            (if isVertical side then
-                "--drawer-swipe-y: "
-
-             else
-                "--drawer-swipe-x: "
-            )
-                ++ String.fromFloat offset
-                ++ "px"
-
-        snapHeight =
-            case config.snapPoints of
-                [] ->
-                    config.height
-
-                first :: _ ->
-                    config.swipe
-                        |> Maybe.andThen (\( State state, _ ) -> state.snap)
-                        |> Maybe.andThen (\index -> List.drop index config.snapPoints |> List.head)
-                        |> Maybe.withDefault first
-                        |> snapPointCss
-                        |> Just
 
         sizes =
             List.filterMap identity
-                [ Maybe.map (\value -> "--drawer-height: " ++ value ++ "; --drawer-max-height: none") snapHeight
+                [ case points of
+                    [] ->
+                        Maybe.map (\value -> "--drawer-height: " ++ value ++ "; --drawer-max-height: none") config.height
+
+                    _ ->
+                        Just "--drawer-height: 100dvh; --drawer-max-height: none"
                 , Maybe.map (\value -> "--drawer-width: " ++ value) config.width
-                , case ( drag, closing ) of
-                    ( Just swipe, _ ) ->
-                        Just (swipeVar swipe.side (swipeOffset config.snapPoints swipe))
-
-                    ( Nothing, Just out ) ->
-                        Just (swipeVar out.side (closedOffset out))
-
-                    ( Nothing, Nothing ) ->
-                        Nothing
                 ]
-
-        -- While a swipe is on, the dialog follows the pointer wherever it goes, since
-        -- the handle is too small to keep it, and the panel stops easing.
-        swiping =
-            case ( drag, config.swipe ) of
-                ( Just swipe, Just ( _, toMsg ) ) ->
-                    [ Html.Events.on "pointermove" (Decode.map (toMsg << Move) (moveDecoder swipe.side))
-                    , Html.Events.on "pointerup" (Decode.succeed (toMsg (End config.snapPoints)))
-                    , Html.Events.on "pointercancel" (Decode.succeed (toMsg Cancel))
-                    , class "pointer-events-auto"
-                    ]
-
-                _ ->
-                    case ( closing, config.onClose ) of
-                        ( Just _, Just msg ) ->
-                            [ Html.Events.on "transitionend" (slideEndDecoder msg) ]
-
-                        _ ->
-                            []
-
-        -- Fades the backdrop out with the slide, and reports the end of the slide.
-        slidingOut =
-            case ( closing, config.swipe ) of
-                ( Just _, Just ( _, toMsg ) ) ->
-                    [ attribute "data-closing" ""
-                    , Html.Events.on "transitionend" (slideEndDecoder (toMsg (Closed config.id)))
-                    ]
-
-                _ ->
-                    []
 
         handle =
             if config.handle then
-                Just (viewHandle config.id layout [] config.swipe)
+                Just (viewHandle layout [])
 
             else if config.downOnMobile then
-                Just (viewHandle config.id layout [ class "md:hidden" ] config.swipe)
+                Just (viewHandle layout [ class "md:hidden" ])
 
             else
                 Nothing
@@ -857,11 +603,9 @@ toHtml attrs (Drawer config) =
                 , Html.node "dialog"
                     ([ Html.Attributes.id config.id
 
-                     -- `overflow-clip`, not `overflow-hidden`: opening focuses the first
-                     -- button in the panel while the panel still sits past the edge, and
-                     -- a hidden overflow would scroll it into view, pinning the panel in
-                     -- place for the whole slide. A clipped overflow can't scroll.
-                     , class "fixed inset-0 z-50 m-0 hidden h-full max-h-none w-full max-w-none overflow-clip bg-transparent p-0 text-inherit outline-none open:block"
+                     -- `overflow-clip`, not `overflow-hidden`: the scroller inside does
+                     -- the scrolling, and the dialog must stay put while it focuses.
+                     , class "fixed inset-0 z-50 m-0 hidden h-full max-h-none w-full max-w-none overflow-clip bg-transparent p-0 text-inherit outline-none backdrop:bg-transparent open:block"
                      ]
                         ++ (if config.modal then
                                 -- The dialog fills the viewport so that the whole dimmed
@@ -870,9 +614,13 @@ toHtml attrs (Drawer config) =
                                 -- browsers that have it close on Escape and a click
                                 -- outside natively. The page behind stops scrolling while
                                 -- the drawer is modal, keeping its scrollbar gutter so
-                                -- that nothing shifts.
+                                -- that nothing shifts. The dimming is an element inside
+                                -- the dialog, not `::backdrop`: WebKit has no `overlay`
+                                -- transition, so a closing dialog leaves the top layer at
+                                -- once and its backdrop with it, while the dimming stays
+                                -- for the slide.
                                 [ attribute "closedby" "any"
-                                , class "[html:has(&:modal)]:overflow-hidden [html:has(&:modal)]:[scrollbar-gutter:stable] backdrop:bg-black/10 backdrop:opacity-0 backdrop:backdrop-blur-xs backdrop:transition-opacity backdrop:duration-450 backdrop:ease-[cubic-bezier(0.32,0.72,0,1)] open:backdrop:opacity-100 starting:open:backdrop:opacity-0 data-closing:open:backdrop:opacity-0"
+                                , class "[html:has(&:modal)]:overflow-hidden [html:has(&:modal)]:[scrollbar-gutter:stable]"
                                 ]
 
                             else
@@ -887,8 +635,6 @@ toHtml attrs (Drawer config) =
                         ++ [ -- The `display` and `overlay` changes wait for the panel to slide out.
                              class "transition-[display,overlay] duration-450 transition-discrete"
                            ]
-                        ++ swiping
-                        ++ slidingOut
                         ++ (if List.isEmpty config.title then
                                 []
 
@@ -909,104 +655,154 @@ toHtml attrs (Drawer config) =
                                     []
                            )
                     )
-                    (Html.div
-                        ([ attribute "data-slot" "drawer-popup"
-                         , class "group/drawer-popup pointer-events-auto absolute z-50 flex min-h-0 bg-popover text-sm text-popover-foreground outline-none select-none will-change-transform [interpolate-size:allow-keywords]"
-
-                         -- Slides from its edge on open and back on close, and shrinks and
-                         -- peeks out behind the drawers nested in it, one step per level.
-                         , class "transition-[translate,scale,filter,height] duration-450 ease-[cubic-bezier(0.22,1,0.36,1)] data-swiping:duration-0 [&:has(dialog[open])]:overflow-hidden [&:has(dialog[open])]:brightness-95 [&:has(dialog[open])]:scale-95 [&:has(dialog[open]_dialog[open])]:scale-90 [&:has(dialog[open]_dialog[open]_dialog[open])]:scale-[0.85]"
-                         , class (layoutClass layout)
+                    [ -- The scroller is the drawer's whole gesture: it holds the closed
+                      -- and open positions as snap points, its scrollbar is hidden, and
+                      -- its scrolling is smooth, so the entrance is a scroll too. It
+                      -- shares its view timeline with the backdrop through
+                      -- `timeline-scope`, since the backdrop is not inside the panel.
+                      Html.div
+                        ([ attribute "data-slot" "drawer-scroller"
+                         , class "absolute inset-0 [timeline-scope:--drawer] scroll-smooth [scrollbar-width:none] overscroll-contain motion-reduce:scroll-auto [&::-webkit-scrollbar]:hidden"
+                         , class (scrollerClass swiping layout)
                          ]
-                            ++ (if List.isEmpty sizes then
-                                    []
-
-                                else
-                                    [ attribute "style" (String.join "; " sizes) ]
-                               )
-                            ++ (case drag of
-                                    Just _ ->
-                                        [ attribute "data-swiping" "" ]
+                            ++ (case config.swipe of
+                                    Just ( _, toMsg ) ->
+                                        -- A swipe ends in a scroll that ends: `scroll` also
+                                        -- fires while the drawer opens and closes.
+                                        [ Html.Events.on "scrollend" (dismissDecoder config.modal (toMsg (Dismissed config.id))) ]
 
                                     Nothing ->
                                         []
                                )
-                            ++ attrs
-                        )
-                        (List.filterMap identity
-                            [ handle
-                            , Just
-                                (Html.div
-                                    [ attribute "data-slot" "drawer-content"
-                                    , class "flex min-h-0 flex-1 flex-col overflow-hidden overscroll-contain rounded-[inherit] transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text [&:has(dialog[open])]:opacity-0"
-                                    ]
-                                    (List.filterMap identity
-                                        [ if hasHeader then
-                                            Just
-                                                (Html.div
-                                                    [ attribute "data-slot" "drawer-header"
-                                                    , class "flex shrink-0 flex-col gap-0.5 p-4 pb-0 md:gap-0.5 md:text-left"
-                                                    , class (headerClass layout)
-                                                    ]
-                                                    (List.filterMap identity
-                                                        [ if List.isEmpty config.title then
-                                                            Nothing
-
-                                                          else
-                                                            Just
-                                                                (Html.h2
-                                                                    [ Html.Attributes.id titleId
-                                                                    , attribute "data-slot" "drawer-title"
-                                                                    , class "text-base font-medium text-foreground"
-                                                                    ]
-                                                                    config.title
-                                                                )
-                                                        , if List.isEmpty config.description then
-                                                            Nothing
-
-                                                          else
-                                                            Just
-                                                                (Html.p
-                                                                    [ Html.Attributes.id descriptionId
-                                                                    , attribute "data-slot" "drawer-description"
-                                                                    , class "text-sm text-balance text-muted-foreground"
-                                                                    ]
-                                                                    config.description
-                                                                )
-                                                        ]
-                                                    )
-                                                )
-
-                                          else
-                                            Nothing
-                                        ]
-                                        ++ config.content
-                                        ++ List.filterMap identity
-                                            [ Maybe.map viewFooter config.footer ]
-                                    )
-                                )
-                            ]
-                        )
-                        :: (if config.modal then
-                                -- Behind the panel and after it in the tree, so that the
-                                -- dialog focuses the panel's first control on opening, not
-                                -- the backdrop.
-                                [ Html.button
-                                    ([ Html.Attributes.type_ "button"
-                                     , attribute "data-slot" "drawer-backdrop"
-                                     , attribute "aria-hidden" "true"
-                                     , Html.Attributes.tabindex -1
-                                     , class "absolute inset-0 -z-10 cursor-default"
-                                     ]
-                                        ++ closes config.id
-                                    )
+                            ++ (if config.modal then
                                     []
-                                ]
 
-                            else
-                                []
-                           )
-                    )
+                                else
+                                    [ class "pointer-events-none" ]
+                               )
+                        )
+                        [ Html.div
+                            [ class "pointer-events-none relative flex"
+                            , class (contentClass layout)
+                            ]
+                            (List.filterMap identity
+                                [ if config.modal then
+                                    -- It covers all of what scrolls, behind everything else,
+                                    -- and fades in as the panel's edge comes into view.
+                                    Just
+                                        (Html.button
+                                            ([ Html.Attributes.type_ "button"
+                                             , attribute "data-slot" "drawer-backdrop"
+                                             , attribute "aria-hidden" "true"
+                                             , Html.Attributes.tabindex -1
+                                             , class "pointer-events-auto absolute inset-0 cursor-default bg-black/10 opacity-0 backdrop-blur-xs [animation-fill-mode:both] [animation-name:drawer-fade] [animation-range:entry] [animation-timeline:--drawer] [animation-timing-function:linear] [dialog:not([open])_&]:[animation:drawer-fade-out_450ms_linear_both]"
+                                             ]
+                                                ++ backdropRange points
+                                                ++ closes config.id
+                                            )
+                                            []
+                                        )
+
+                                  else
+                                    Nothing
+
+                                -- The exit area and the bleed only exist while the drawer is
+                                -- open. Chrome keeps a scroller's offset through `display:
+                                -- none`, so a drawer closed by a button would reopen already
+                                -- scrolled in, with nothing left to animate. Without them the
+                                -- scroller has no room, and its offset clamps back to zero.
+                                , Just (Html.div [ class "shrink-0 [:not(:is([open],:popover-open))>*>*>&]:hidden", class (exitClass layout) ] [])
+                                , Just
+                                    (Html.div
+                                        ([ attribute "data-slot" "drawer-stage"
+                                         , class "shrink-0 outline-none"
+                                         , class (stageClass (not (List.isEmpty points)) layout)
+                                         ]
+                                            ++ (if List.isEmpty points then
+                                                    entrance
+
+                                                else
+                                                    []
+                                               )
+                                        )
+                                        [ Html.div
+                                            ([ attribute "data-slot" "drawer-popup"
+                                             , class "group/drawer-popup pointer-events-auto relative flex min-h-0 bg-popover text-sm text-popover-foreground outline-none select-none will-change-transform [interpolate-size:allow-keywords]"
+
+                                             -- Slides from its edge on close, and shrinks and peeks out behind
+                                             -- the drawers nested in it, one step per level.
+                                             , class "transition-[translate,scale,filter,height] duration-450 ease-[cubic-bezier(0.22,1,0.36,1)] [&:has(dialog[open])]:overflow-hidden [&:has(dialog[open])]:brightness-95 [&:has(dialog[open])]:scale-95 [&:has(dialog[open]_dialog[open])]:scale-90 [&:has(dialog[open]_dialog[open]_dialog[open])]:scale-[0.85]"
+                                             , class (panelClass layout)
+                                             ]
+                                                ++ (if List.isEmpty sizes then
+                                                        []
+
+                                                    else
+                                                        [ attribute "style" (String.join "; " sizes) ]
+                                                   )
+                                                ++ attrs
+                                            )
+                                            (List.concat
+                                                [ List.indexedMap (viewSnapPoint layout) points
+                                                , List.filterMap identity [ handle ]
+                                                , [ Html.div
+                                                        [ attribute "data-slot" "drawer-content"
+                                                        , class "flex min-h-0 flex-1 flex-col overflow-hidden overscroll-auto rounded-[inherit] transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text [&:has(dialog[open])]:opacity-0"
+                                                        ]
+                                                        (List.filterMap identity
+                                                            [ if hasHeader then
+                                                                Just
+                                                                    (Html.div
+                                                                        [ attribute "data-slot" "drawer-header"
+                                                                        , class "flex shrink-0 flex-col gap-0.5 p-4 pb-0 md:gap-0.5 md:text-left"
+                                                                        , class (headerClass layout)
+                                                                        ]
+                                                                        (List.filterMap identity
+                                                                            [ if List.isEmpty config.title then
+                                                                                Nothing
+
+                                                                              else
+                                                                                Just
+                                                                                    (Html.h2
+                                                                                        [ Html.Attributes.id titleId
+                                                                                        , attribute "data-slot" "drawer-title"
+                                                                                        , class "text-base font-medium text-foreground"
+                                                                                        ]
+                                                                                        config.title
+                                                                                    )
+                                                                            , if List.isEmpty config.description then
+                                                                                Nothing
+
+                                                                              else
+                                                                                Just
+                                                                                    (Html.p
+                                                                                        [ Html.Attributes.id descriptionId
+                                                                                        , attribute "data-slot" "drawer-description"
+                                                                                        , class "text-sm text-balance text-muted-foreground"
+                                                                                        ]
+                                                                                        config.description
+                                                                                    )
+                                                                            ]
+                                                                        )
+                                                                    )
+
+                                                              else
+                                                                Nothing
+                                                            ]
+                                                            ++ config.content
+                                                            ++ List.filterMap identity
+                                                                [ Maybe.map viewFooter config.footer ]
+                                                        )
+                                                  ]
+                                                ]
+                                            )
+                                        ]
+                                    )
+                                , Just (Html.div [ class "relative shrink-0 bg-popover [:not(:is([open],:popover-open))>*>*>&]:hidden", class (bleedClass layout) ] [])
+                                ]
+                            )
+                        ]
+                    ]
                 )
             ]
         )
@@ -1023,25 +819,61 @@ viewFooter ( attrs, children ) =
         children
 
 
-viewHandle : String -> Layout -> List (Attribute msg) -> Maybe ( State, Msg -> msg ) -> Html msg
-viewHandle drawerId layout attrs swipe =
+viewHandle : Layout -> List (Attribute msg) -> Html msg
+viewHandle layout attrs =
     Html.div
         ([ attribute "data-slot" "drawer-swipe-handle"
          , attribute "aria-hidden" "true"
-         , class "relative z-10 flex shrink-0 cursor-grab touch-none transition-opacity duration-200 active:cursor-grabbing after:block after:shrink-0 after:rounded-full after:bg-muted [:has(dialog[open])>&]:opacity-0"
+         , class "relative z-10 flex shrink-0 transition-opacity duration-200 after:block after:shrink-0 after:rounded-full after:bg-muted [:has(dialog[open])>&]:opacity-0"
          , class (handleClass layout)
          ]
-            ++ (case swipe of
-                    Just ( _, toMsg ) ->
-                        -- Prevented so that a mouse drag selects no text.
-                        [ Html.Events.preventDefaultOn "pointerdown"
-                            (Decode.map (\drag -> ( toMsg (Start drag), True )) (startDecoder drawerId layout))
-                        ]
+            ++ attrs
+        )
+        []
 
-                    Nothing ->
+
+{-| A snap point is a marker inside the panel, `point` in from its leading edge. It snaps to the
+leading edge of the scroller by way of a scroll margin of one viewport, which leaves exactly `point`
+of the panel in view. The margin also makes the marker's snap area as tall as the viewport, so that
+the dialog focusing the first marker on opening scrolls it to the same place, whichever way the
+browser aligns what it scrolls into view. The marker is two pixels tall, since Chrome ignores a
+smaller one.
+-}
+viewSnapPoint : Layout -> Int -> Float -> Html msg
+viewSnapPoint layout index point =
+    Html.div
+        ([ attribute "data-slot" "drawer-snap-point"
+         , class "pointer-events-none absolute left-0 h-0.5 w-0.5 snap-start outline-none"
+         , case layout of
+            FixedSide Up ->
+                class "scroll-mb-[100dvh]"
+
+            _ ->
+                class "scroll-mt-[100dvh]"
+         , attribute "style"
+            ((case layout of
+                FixedSide Up ->
+                    "bottom: "
+
+                _ ->
+                    "top: "
+             )
+                ++ snapPointCss point
+            )
+         ]
+            ++ (case layout of
+                    DownBelowMd _ ->
+                        [ class "md:hidden" ]
+
+                    FixedSide _ ->
                         []
                )
-            ++ attrs
+            ++ (if index == 0 then
+                    entrance
+
+                else
+                    []
+               )
         )
         []
 
@@ -1052,38 +884,255 @@ viewHandle drawerId layout attrs swipe =
 
 {-| A fixed side, or a side from `md` up with the bottom below it. Tailwind only finds
 classes written out in full, so every combination is spelled out below.
+
+Every layout is the same scroller seen from a different edge. It scrolls along the axis the drawer
+slides on, and a swipe is a scroll toward the origin, where the closed drawer rests. The origin is
+the top for `Down`, the bottom for `Up`, the left for `Right` and the right for `Left`, which is why
+the last two flip the direction, and the second one the writing mode.
+
 -}
 type Layout
     = FixedSide Side
     | DownBelowMd Side
 
 
-layoutClass : Layout -> String
-layoutClass layout =
+panelClass : Layout -> String
+panelClass layout =
     case layout of
         FixedSide Down ->
-            "after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-[100dvh] after:bg-popover inset-x-0 bottom-0 flex-col rounded-t-xl border-t origin-bottom h-(--drawer-height) max-h-(--drawer-max-height) [--drawer-height:auto] [--drawer-max-height:calc(100dvh-6rem)] translate-y-[calc(100%+2px)] [:is([open],:popover-open)>&]:translate-y-(--drawer-swipe-y,0px) starting:[:is([open],:popover-open)>&]:translate-y-[calc(100%+2px)] [&:has(dialog[open])]:-translate-y-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:-translate-y-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-y-[calc(3rem+15%)]"
+            "flex-col rounded-t-xl border-t origin-bottom h-(--drawer-height) max-h-(--drawer-max-height) [--drawer-height:auto] [--drawer-max-height:calc(100dvh-6rem)] translate-y-[calc(100%+2px)] [:is([open],:popover-open)>*>*>*>&]:translate-y-0 [&:has(dialog[open])]:-translate-y-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:-translate-y-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-y-[calc(3rem+15%)] [view-timeline:--drawer_y]"
 
         FixedSide Up ->
-            "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-full after:h-[100dvh] after:bg-popover inset-x-0 top-0 flex-col rounded-b-xl border-b origin-top h-(--drawer-height) max-h-(--drawer-max-height) [--drawer-height:auto] [--drawer-max-height:calc(100dvh-6rem)] -translate-y-[calc(100%+2px)] [:is([open],:popover-open)>&]:translate-y-(--drawer-swipe-y,0px) starting:[:is([open],:popover-open)>&]:-translate-y-[calc(100%+2px)] [&:has(dialog[open])]:translate-y-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:translate-y-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:translate-y-[calc(3rem+15%)]"
+            "flex-col rounded-b-xl border-b origin-top h-(--drawer-height) max-h-(--drawer-max-height) [--drawer-height:auto] [--drawer-max-height:calc(100dvh-6rem)] -translate-y-[calc(100%+2px)] [:is([open],:popover-open)>*>*>*>&]:translate-y-0 [&:has(dialog[open])]:translate-y-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:translate-y-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:translate-y-[calc(3rem+15%)] [view-timeline:--drawer_y]"
 
         FixedSide Left ->
-            "after:pointer-events-none after:absolute after:inset-y-0 after:right-full after:w-[100dvw] after:bg-popover inset-y-0 left-0 flex-row rounded-r-xl border-r origin-left w-(--drawer-width) [--drawer-width:75%] sm:[--drawer-width:24rem] -translate-x-[calc(100%+2px)] [:is([open],:popover-open)>&]:translate-x-(--drawer-swipe-x,0px) starting:[:is([open],:popover-open)>&]:-translate-x-[calc(100%+2px)] [&:has(dialog[open])]:translate-x-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:translate-x-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:translate-x-[calc(3rem+15%)]"
+            "h-full flex-row rounded-r-xl border-r origin-left w-(--drawer-width) [--drawer-width:75dvw] sm:[--drawer-width:24rem] -translate-x-[calc(100%+2px)] [:is([open],:popover-open)>*>*>*>&]:translate-x-0 [&:has(dialog[open])]:translate-x-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:translate-x-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:translate-x-[calc(3rem+15%)] [view-timeline:--drawer_x]"
 
         FixedSide Right ->
-            "after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-[100dvw] after:bg-popover inset-y-0 right-0 flex-row rounded-l-xl border-l origin-right w-(--drawer-width) [--drawer-width:75%] sm:[--drawer-width:24rem] translate-x-[calc(100%+2px)] [:is([open],:popover-open)>&]:translate-x-(--drawer-swipe-x,0px) starting:[:is([open],:popover-open)>&]:translate-x-[calc(100%+2px)] [&:has(dialog[open])]:-translate-x-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:-translate-x-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-x-[calc(3rem+15%)]"
+            "h-full flex-row rounded-l-xl border-l origin-right w-(--drawer-width) [--drawer-width:75dvw] sm:[--drawer-width:24rem] translate-x-[calc(100%+2px)] [:is([open],:popover-open)>*>*>*>&]:translate-x-0 [&:has(dialog[open])]:-translate-x-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:-translate-x-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-x-[calc(3rem+15%)] [view-timeline:--drawer_x]"
 
         DownBelowMd side ->
-            "max-md:after:pointer-events-none max-md:after:absolute max-md:after:inset-x-0 max-md:after:top-full max-md:after:h-[100dvh] max-md:after:bg-popover max-md:inset-x-0 max-md:bottom-0 max-md:flex-col max-md:rounded-t-xl max-md:border-t max-md:origin-bottom max-md:h-(--drawer-height) max-md:max-h-(--drawer-max-height) max-md:[--drawer-height:auto] max-md:[--drawer-max-height:calc(100dvh-6rem)] max-md:translate-y-[calc(100%+2px)] max-md:[:is([open],:popover-open)>&]:translate-y-(--drawer-swipe-y,0px) max-md:starting:[:is([open],:popover-open)>&]:translate-y-[calc(100%+2px)] max-md:[&:has(dialog[open])]:-translate-y-[calc(1rem+5%)] max-md:[&:has(dialog[open]_dialog[open])]:-translate-y-[calc(2rem+10%)] max-md:[&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-y-[calc(3rem+15%)] "
+            "max-md:flex-col max-md:rounded-t-xl max-md:border-t max-md:origin-bottom max-md:h-(--drawer-height) max-md:max-h-(--drawer-max-height) max-md:[--drawer-height:auto] max-md:[--drawer-max-height:calc(100dvh-6rem)] max-md:translate-y-[calc(100%+2px)] max-md:[:is([open],:popover-open)>*>*>*>&]:translate-y-0 max-md:[&:has(dialog[open])]:-translate-y-[calc(1rem+5%)] max-md:[&:has(dialog[open]_dialog[open])]:-translate-y-[calc(2rem+10%)] max-md:[&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-y-[calc(3rem+15%)] max-md:[view-timeline:--drawer_y] "
                 ++ (case side of
                         Up ->
-                            "md:after:pointer-events-none md:after:absolute md:after:inset-x-0 md:after:bottom-full md:after:h-[100dvh] md:after:bg-popover md:inset-x-0 md:top-0 md:flex-col md:rounded-b-xl md:border-b md:origin-top md:h-(--drawer-height) md:max-h-(--drawer-max-height) md:[--drawer-height:auto] md:[--drawer-max-height:calc(100dvh-6rem)] md:-translate-y-[calc(100%+2px)] md:[:is([open],:popover-open)>&]:translate-y-(--drawer-swipe-y,0px) md:starting:[:is([open],:popover-open)>&]:-translate-y-[calc(100%+2px)] md:[&:has(dialog[open])]:translate-y-[calc(1rem+5%)] md:[&:has(dialog[open]_dialog[open])]:translate-y-[calc(2rem+10%)] md:[&:has(dialog[open]_dialog[open]_dialog[open])]:translate-y-[calc(3rem+15%)]"
+                            "md:flex-col md:rounded-b-xl md:border-b md:origin-top md:h-(--drawer-height) md:max-h-(--drawer-max-height) md:[--drawer-height:auto] md:[--drawer-max-height:calc(100dvh-6rem)] md:-translate-y-[calc(100%+2px)] md:[:is([open],:popover-open)>*>*>*>&]:translate-y-0 md:[&:has(dialog[open])]:translate-y-[calc(1rem+5%)] md:[&:has(dialog[open]_dialog[open])]:translate-y-[calc(2rem+10%)] md:[&:has(dialog[open]_dialog[open]_dialog[open])]:translate-y-[calc(3rem+15%)] md:[view-timeline:--drawer_y]"
 
                         Left ->
-                            "md:after:pointer-events-none md:after:absolute md:after:inset-y-0 md:after:right-full md:after:w-[100dvw] md:after:bg-popover md:inset-y-0 md:left-0 md:flex-row md:rounded-r-xl md:border-r md:origin-left md:w-(--drawer-width) md:[--drawer-width:24rem] md:-translate-x-[calc(100%+2px)] md:[:is([open],:popover-open)>&]:translate-x-(--drawer-swipe-x,0px) md:starting:[:is([open],:popover-open)>&]:-translate-x-[calc(100%+2px)] md:[&:has(dialog[open])]:translate-x-[calc(1rem+5%)] md:[&:has(dialog[open]_dialog[open])]:translate-x-[calc(2rem+10%)] md:[&:has(dialog[open]_dialog[open]_dialog[open])]:translate-x-[calc(3rem+15%)]"
+                            "md:h-full md:flex-row md:rounded-r-xl md:border-r md:origin-left md:w-(--drawer-width) md:[--drawer-width:24rem] md:-translate-x-[calc(100%+2px)] md:[:is([open],:popover-open)>*>*>*>&]:translate-x-0 md:[&:has(dialog[open])]:translate-x-[calc(1rem+5%)] md:[&:has(dialog[open]_dialog[open])]:translate-x-[calc(2rem+10%)] md:[&:has(dialog[open]_dialog[open]_dialog[open])]:translate-x-[calc(3rem+15%)] md:[view-timeline:--drawer_x]"
 
                         _ ->
-                            "md:after:pointer-events-none md:after:absolute md:after:inset-y-0 md:after:left-full md:after:w-[100dvw] md:after:bg-popover md:inset-y-0 md:right-0 md:flex-row md:rounded-l-xl md:border-l md:origin-right md:w-(--drawer-width) md:[--drawer-width:24rem] md:translate-x-[calc(100%+2px)] md:[:is([open],:popover-open)>&]:translate-x-(--drawer-swipe-x,0px) md:starting:[:is([open],:popover-open)>&]:translate-x-[calc(100%+2px)] md:[&:has(dialog[open])]:-translate-x-[calc(1rem+5%)] md:[&:has(dialog[open]_dialog[open])]:-translate-x-[calc(2rem+10%)] md:[&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-x-[calc(3rem+15%)]"
+                            "md:h-full md:flex-row md:rounded-l-xl md:border-l md:origin-right md:w-(--drawer-width) md:[--drawer-width:24rem] md:translate-x-[calc(100%+2px)] md:[:is([open],:popover-open)>*>*>*>&]:translate-x-0 md:[&:has(dialog[open])]:-translate-x-[calc(1rem+5%)] md:[&:has(dialog[open]_dialog[open])]:-translate-x-[calc(2rem+10%)] md:[&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-x-[calc(3rem+15%)] md:[view-timeline:--drawer_x]"
+                   )
+
+
+scrollerClass : Bool -> Layout -> String
+scrollerClass swiping layout =
+    case layout of
+        FixedSide Down ->
+            if swiping then
+                "overflow-y-auto overflow-x-hidden [scroll-snap-type:y_mandatory]"
+
+            else
+                "overflow-y-hidden overflow-x-hidden [scroll-snap-type:y_mandatory]"
+
+        FixedSide Up ->
+            if swiping then
+                "overflow-y-auto overflow-x-hidden [scroll-snap-type:y_mandatory] [writing-mode:vertical-rl] [direction:rtl]"
+
+            else
+                "overflow-y-hidden overflow-x-hidden [scroll-snap-type:y_mandatory] [writing-mode:vertical-rl] [direction:rtl]"
+
+        FixedSide Left ->
+            if swiping then
+                "overflow-x-auto overflow-y-hidden [scroll-snap-type:x_mandatory] [direction:rtl]"
+
+            else
+                "overflow-x-hidden overflow-y-hidden [scroll-snap-type:x_mandatory] [direction:rtl]"
+
+        FixedSide Right ->
+            if swiping then
+                "overflow-x-auto overflow-y-hidden [scroll-snap-type:x_mandatory]"
+
+            else
+                "overflow-x-hidden overflow-y-hidden [scroll-snap-type:x_mandatory]"
+
+        DownBelowMd side ->
+            (if swiping then
+                "max-md:overflow-y-auto max-md:overflow-x-hidden max-md:[scroll-snap-type:y_mandatory] "
+
+             else
+                "max-md:overflow-y-hidden max-md:overflow-x-hidden max-md:[scroll-snap-type:y_mandatory] "
+            )
+                ++ (case side of
+                        Up ->
+                            if swiping then
+                                "md:overflow-y-auto md:overflow-x-hidden md:[scroll-snap-type:y_mandatory] md:[writing-mode:vertical-rl] md:[direction:rtl]"
+
+                            else
+                                "md:overflow-y-hidden md:overflow-x-hidden md:[scroll-snap-type:y_mandatory] md:[writing-mode:vertical-rl] md:[direction:rtl]"
+
+                        Left ->
+                            if swiping then
+                                "md:overflow-x-auto md:overflow-y-hidden md:[scroll-snap-type:x_mandatory] md:[direction:rtl]"
+
+                            else
+                                "md:overflow-x-hidden md:overflow-y-hidden md:[scroll-snap-type:x_mandatory] md:[direction:rtl]"
+
+                        _ ->
+                            if swiping then
+                                "md:overflow-x-auto md:overflow-y-hidden md:[scroll-snap-type:x_mandatory]"
+
+                            else
+                                "md:overflow-x-hidden md:overflow-y-hidden md:[scroll-snap-type:x_mandatory]"
+                   )
+
+
+contentClass : Layout -> String
+contentClass layout =
+    case layout of
+        FixedSide Down ->
+            "flex-col"
+
+        FixedSide Up ->
+            "w-full flex-row"
+
+        FixedSide Left ->
+            "h-full flex-row"
+
+        FixedSide Right ->
+            "h-full flex-row"
+
+        DownBelowMd side ->
+            "max-md:flex-col "
+                ++ (case side of
+                        Up ->
+                            "md:w-full md:flex-row"
+
+                        Left ->
+                            "md:h-full md:flex-row"
+
+                        _ ->
+                            "md:h-full md:flex-row"
+                   )
+
+
+exitClass : Layout -> String
+exitClass layout =
+    case layout of
+        FixedSide Down ->
+            "h-[100dvh] snap-start"
+
+        FixedSide Up ->
+            "h-[100dvh] [writing-mode:horizontal-tb] [direction:ltr] snap-start"
+
+        FixedSide Left ->
+            "w-[100dvw] snap-start"
+
+        FixedSide Right ->
+            "w-[100dvw] snap-start"
+
+        DownBelowMd side ->
+            "max-md:h-[100dvh] max-md:snap-start "
+                ++ (case side of
+                        Up ->
+                            "md:h-[100dvh] md:[writing-mode:horizontal-tb] md:[direction:ltr] md:snap-start"
+
+                        Left ->
+                            "md:w-[100dvw] md:snap-start"
+
+                        _ ->
+                            "md:w-[100dvw] md:snap-start"
+                   )
+
+
+stageClass : Bool -> Layout -> String
+stageClass snapped layout =
+    case layout of
+        FixedSide Down ->
+            if snapped then
+                ""
+
+            else
+                "snap-end"
+
+        FixedSide Up ->
+            if snapped then
+                "[writing-mode:horizontal-tb] [direction:ltr]"
+
+            else
+                "[writing-mode:horizontal-tb] [direction:ltr] snap-end"
+
+        FixedSide Left ->
+            if snapped then
+                "[direction:ltr]"
+
+            else
+                "[direction:ltr] snap-end"
+
+        FixedSide Right ->
+            if snapped then
+                ""
+
+            else
+                "snap-end"
+
+        DownBelowMd side ->
+            (if snapped then
+                " "
+
+             else
+                "max-md:snap-end "
+            )
+                ++ (case side of
+                        Up ->
+                            if snapped then
+                                "md:[writing-mode:horizontal-tb] md:[direction:ltr]"
+
+                            else
+                                "md:[writing-mode:horizontal-tb] md:[direction:ltr] md:snap-end"
+
+                        Left ->
+                            if snapped then
+                                "md:[direction:ltr]"
+
+                            else
+                                "md:[direction:ltr] md:snap-end"
+
+                        _ ->
+                            if snapped then
+                                ""
+
+                            else
+                                "md:snap-end"
+                   )
+
+
+bleedClass : Layout -> String
+bleedClass layout =
+    case layout of
+        FixedSide Down ->
+            "h-[100dvh]"
+
+        FixedSide Up ->
+            "h-[100dvh] [writing-mode:horizontal-tb] [direction:ltr]"
+
+        FixedSide Left ->
+            "w-[100dvw]"
+
+        FixedSide Right ->
+            "w-[100dvw]"
+
+        DownBelowMd side ->
+            "max-md:h-[100dvh] "
+                ++ (case side of
+                        Up ->
+                            "md:h-[100dvh] md:[writing-mode:horizontal-tb] md:[direction:ltr]"
+
+                        Left ->
+                            "md:w-[100dvw]"
+
+                        _ ->
+                            "md:w-[100dvw]"
                    )
 
 
@@ -1132,3 +1181,25 @@ headerClass layout =
 
         DownBelowMd _ ->
             "max-md:text-center"
+
+
+{-| With snap points, the drawer opens with its first one in view, and the backdrop is at full
+strength by then.
+-}
+backdropRange : List Float -> List (Attribute msg)
+backdropRange points =
+    case points of
+        first :: _ ->
+            [ attribute "style" ("animation-range: entry 0% entry " ++ snapPointCss first) ]
+
+        [] ->
+            []
+
+
+{-| The browser scrolls whatever is focused on opening into view, and the scroller smooths that
+scroll, which is the whole entrance. The stage is what is brought into view, or the first snap
+point inside the panel.
+-}
+entrance : List (Attribute msg)
+entrance =
+    [ attribute "autofocus" "", Html.Attributes.tabindex -1 ]
