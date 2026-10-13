@@ -526,7 +526,14 @@ toHtml attrs (Drawer config) =
                             []
 
                         else
-                            [ class "pointer-events-none" ]
+                            -- Safari on iOS won't scroll a scroller that ignores pointer
+                            -- events, even from the panel inside it. Where scroll timelines
+                            -- exist, the scroller takes them instead, clipped to the part of
+                            -- the screen its panel covers, which leaves the page around it
+                            -- usable.
+                            [ class "pointer-events-none supports-[animation-timeline:scroll()]:pointer-events-auto supports-[animation-timeline:scroll()]:[animation-name:drawer-reveal] supports-[animation-timeline:scroll()]:[animation-fill-mode:both] supports-[animation-timeline:scroll()]:[animation-timing-function:linear]"
+                            , class (revealClass layout)
+                            ]
                        )
                 )
                 [ Html.div
@@ -841,6 +848,38 @@ contentClass layout =
 
                         _ ->
                             "md:h-full md:flex-row"
+                   )
+
+
+{-| A non-modal drawer's scroller is clipped on the side of its exit area, by as much of the exit
+area as is in view: all of it while the drawer is closed, and one pixel less per pixel scrolled.
+-}
+revealClass : Layout -> String
+revealClass layout =
+    case layout of
+        FixedSide Down ->
+            "supports-[animation-timeline:scroll()]:[clip-path:inset(100%_0_0_0)] supports-[animation-timeline:scroll()]:[animation-timeline:scroll(self_y)] supports-[animation-timeline:scroll()]:[animation-range:0px_100dvh]"
+
+        FixedSide Up ->
+            "supports-[animation-timeline:scroll()]:[clip-path:inset(0_0_100%_0)] supports-[animation-timeline:scroll()]:[animation-timeline:scroll(self_y)] supports-[animation-timeline:scroll()]:[animation-range:0px_100dvh]"
+
+        FixedSide Left ->
+            "supports-[animation-timeline:scroll()]:[clip-path:inset(0_100%_0_0)] supports-[animation-timeline:scroll()]:[animation-timeline:scroll(self_x)] supports-[animation-timeline:scroll()]:[animation-range:0px_100dvw]"
+
+        FixedSide Right ->
+            "supports-[animation-timeline:scroll()]:[clip-path:inset(0_0_0_100%)] supports-[animation-timeline:scroll()]:[animation-timeline:scroll(self_x)] supports-[animation-timeline:scroll()]:[animation-range:0px_100dvw]"
+
+        DownBelowMd side ->
+            "supports-[animation-timeline:scroll()]:max-md:[clip-path:inset(100%_0_0_0)] supports-[animation-timeline:scroll()]:max-md:[animation-timeline:scroll(self_y)] supports-[animation-timeline:scroll()]:max-md:[animation-range:0px_100dvh] "
+                ++ (case side of
+                        Up ->
+                            "supports-[animation-timeline:scroll()]:md:[clip-path:inset(0_0_100%_0)] supports-[animation-timeline:scroll()]:md:[animation-timeline:scroll(self_y)] supports-[animation-timeline:scroll()]:md:[animation-range:0px_100dvh]"
+
+                        Left ->
+                            "supports-[animation-timeline:scroll()]:md:[clip-path:inset(0_100%_0_0)] supports-[animation-timeline:scroll()]:md:[animation-timeline:scroll(self_x)] supports-[animation-timeline:scroll()]:md:[animation-range:0px_100dvw]"
+
+                        _ ->
+                            "supports-[animation-timeline:scroll()]:md:[clip-path:inset(0_0_0_100%)] supports-[animation-timeline:scroll()]:md:[animation-timeline:scroll(self_x)] supports-[animation-timeline:scroll()]:md:[animation-range:0px_100dvw]"
                    )
 
 

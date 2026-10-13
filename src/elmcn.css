@@ -149,6 +149,18 @@
 }
 
 /*
+  A non-modal drawer's scroller is clipped to the part of the screen its panel covers, so
+  that the page around it stays usable. The clip opens from the closed side the scroller
+  gives it, one pixel per pixel scrolled.
+*/
+
+@keyframes drawer-reveal {
+  to {
+    clip-path: inset(0);
+  }
+}
+
+/*
   Utilities from shadcn's `tailwind.css` that the attachment uses: a shimmer on the title
   while it uploads, and a scroll fade plus hidden scrollbar on the attachment group. The
   drawer demo uses the vertical scroll fade.
