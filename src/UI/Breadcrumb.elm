@@ -1,32 +1,25 @@
 module UI.Breadcrumb exposing
-    ( Breadcrumb
+    ( Breadcrumb, Ready, NeedsSeparator
     , new
-    , link, page, ellipsis, item
     , separator
+    , link, page, ellipsis, ellipsisIcon, item
     , toHtml
     )
 
 {-| Displays the path to the current resource using a hierarchy of links.
 
-A breadcrumb is built with `new`, given its items in order, and rendered with `toHtml`.
-A separator is placed between every two items:
+A breadcrumb is built with `new`, given its items in order and a `separator`, and rendered with `toHtml`.
+The separator is placed between every two items:
 
     Breadcrumb.new
         |> Breadcrumb.link [ href "/" ] [ text "Home" ]
         |> Breadcrumb.ellipsis
         |> Breadcrumb.link [ href "/components" ] [ text "Components" ]
         |> Breadcrumb.page [ text "Breadcrumb" ]
+        |> Breadcrumb.separator (Phosphor.caretRight Regular |> Phosphor.toHtml [])
         |> Breadcrumb.toHtml []
 
-The default separator is a chevron. Pass your own with `separator`:
-
-    Breadcrumb.new
-        |> Breadcrumb.separator (text "/")
-        |> Breadcrumb.link [ href "/" ] [ text "Home" ]
-        |> Breadcrumb.page [ text "Docs" ]
-        |> Breadcrumb.toHtml []
-
-@docs Breadcrumb
+@docs Breadcrumb, Ready, NeedsSeparator
 
 
 # Constructor
@@ -34,14 +27,16 @@ The default separator is a chevron. Pass your own with `separator`:
 @docs new
 
 
-# Items
+# Required
 
-@docs link, page, ellipsis, item
-
-
-# Separator
+`toHtml` won't accept a breadcrumb until it has a `separator`.
 
 @docs separator
+
+
+# Items
+
+@docs link, page, ellipsis, ellipsisIcon, item
 
 
 # Rendering
@@ -54,24 +49,47 @@ import Html exposing (Attribute, Html)
 import Html.Attributes exposing (attribute, class)
 
 
-{-| A breadcrumb being built.
+{-| A breadcrumb being built. `status` is [`Ready`](#Ready) once it has a separator, or [`NeedsSeparator`](#NeedsSeparator) until then.
 -}
-type Breadcrumb msg
+type Breadcrumb status msg
     = Breadcrumb
         { items : List (Html msg)
-        , separator : Maybe (Html msg)
+        , separator : Html msg
         }
+
+
+{-| The breadcrumb can be rendered.
+-}
+type Ready
+    = Ready
+
+
+{-| A breadcrumb that still needs a [`separator`](#separator) before it can be rendered.
+-}
+type NeedsSeparator
+    = NeedsSeparator
 
 
 
 -- CONSTRUCTOR
 
 
-{-| An empty breadcrumb.
+{-| An empty breadcrumb. Give it a [`separator`](#separator) to make it renderable.
 -}
-new : Breadcrumb msg
+new : Breadcrumb NeedsSeparator msg
 new =
-    Breadcrumb { items = [], separator = Nothing }
+    Breadcrumb { items = [], separator = Html.text "" }
+
+
+
+-- REQUIRED
+
+
+{-| What goes between the items, such as an icon. The breadcrumb becomes renderable. It is placed in a `<li>` that sizes an `svg` child to `size-3.5`.
+-}
+separator : Html msg -> Breadcrumb status msg -> Breadcrumb Ready msg
+separator child (Breadcrumb config) =
+    Breadcrumb { items = config.items, separator = child }
 
 
 
@@ -80,7 +98,7 @@ new =
 
 {-| A link to an ancestor, rendered as an `<a>`. The attributes go on the `<a>`, so pass `href`.
 -}
-link : List (Attribute msg) -> List (Html msg) -> Breadcrumb msg -> Breadcrumb msg
+link : List (Attribute msg) -> List (Html msg) -> Breadcrumb status msg -> Breadcrumb status msg
 link attrs children =
     item []
         [ Html.a (attribute "data-slot" "breadcrumb-link" :: class "transition-colors hover:text-foreground" :: attrs) children ]
@@ -88,7 +106,7 @@ link attrs children =
 
 {-| The current page. Not a link.
 -}
-page : List (Html msg) -> Breadcrumb msg -> Breadcrumb msg
+page : List (Html msg) -> Breadcrumb status msg -> Breadcrumb status msg
 page children =
     item []
         [ Html.span
@@ -104,26 +122,32 @@ page children =
 
 {-| Stands in for collapsed items.
 -}
-ellipsis : Breadcrumb msg -> Breadcrumb msg
+ellipsis : Breadcrumb status msg -> Breadcrumb status msg
 ellipsis =
-    item []
-        [ Html.span
-            [ attribute "data-slot" "breadcrumb-ellipsis"
-            , attribute "role" "presentation"
-            , attribute "aria-hidden" "true"
-            , class "flex size-5 items-center justify-center gap-0.5"
-            ]
-            [ Html.span [ class "size-[2.5px] rounded-full bg-current" ] []
-            , Html.span [ class "size-[2.5px] rounded-full bg-current" ] []
-            , Html.span [ class "size-[2.5px] rounded-full bg-current" ] []
-            , Html.span [ class "sr-only" ] [ Html.text "More" ]
-            ]
+    item [] [ ellipsisIcon ]
+
+
+{-| The ellipsis on its own, to put inside an `item`, such as in the trigger of a dropdown menu that lists the collapsed items.
+-}
+ellipsisIcon : Html msg
+ellipsisIcon =
+    Html.span
+        [ attribute "data-slot" "breadcrumb-ellipsis"
+        , attribute "role" "presentation"
+        , attribute "aria-hidden" "true"
+        , class "flex size-5 items-center justify-center gap-0.5"
         ]
+        [ dot, dot, dot, Html.span [ class "sr-only" ] [ Html.text "More" ] ]
+
+
+dot : Html msg
+dot =
+    Html.span [ class "size-[2.667px] rounded-full bg-current" ] []
 
 
 {-| An item with your own content, such as a dropdown trigger. The attributes go on the `<li>`.
 -}
-item : List (Attribute msg) -> List (Html msg) -> Breadcrumb msg -> Breadcrumb msg
+item : List (Attribute msg) -> List (Html msg) -> Breadcrumb status msg -> Breadcrumb status msg
 item attrs children (Breadcrumb config) =
     Breadcrumb
         { config
@@ -134,23 +158,12 @@ item attrs children (Breadcrumb config) =
 
 
 
--- SEPARATOR
-
-
-{-| Replaces the chevron placed between items.
--}
-separator : Html msg -> Breadcrumb msg -> Breadcrumb msg
-separator child (Breadcrumb config) =
-    Breadcrumb { config | separator = Just child }
-
-
-
 -- RENDERING
 
 
 {-| Renders a `<nav>` with an `<ol>` of the items. The attributes go on the `<nav>`.
 -}
-toHtml : List (Attribute msg) -> Breadcrumb msg -> Html msg
+toHtml : List (Attribute msg) -> Breadcrumb Ready msg -> Html msg
 toHtml attrs (Breadcrumb config) =
     Html.nav
         (attribute "aria-label" "breadcrumb" :: attribute "data-slot" "breadcrumb" :: attrs)
@@ -162,15 +175,12 @@ toHtml attrs (Breadcrumb config) =
         ]
 
 
-viewSeparator : Maybe (Html msg) -> Html msg
-viewSeparator custom =
+viewSeparator : Html msg -> Html msg
+viewSeparator child =
     Html.li
         [ attribute "data-slot" "breadcrumb-separator"
         , attribute "role" "presentation"
         , attribute "aria-hidden" "true"
-        , class "flex items-center"
+        , class "flex items-center [&>svg]:size-3.5"
         ]
-        [ Maybe.withDefault
-            (Html.span [ class "size-1.5 rotate-45 border-t-[1.5px] border-r-[1.5px] border-current rtl:-rotate-135" ] [])
-            custom
-        ]
+        [ child ]
