@@ -49,85 +49,91 @@ demo state =
                     ]
                 ]
     in
-    Drawer.new
-        |> Drawer.id "delivery"
-        |> Drawer.nonModal
-        |> Drawer.trigger
-            (Button.new
-                |> Button.text "Open Drawer"
-                |> Button.secondary
-            )
-        |> Drawer.right
-        |> Drawer.downOnMobile
-        |> Drawer.swipeable (State.drawer state) State.drawerMsg
-        |> Drawer.title [ text "Pick a delivery time" ]
-        |> Drawer.description [ text "We'll prepare your order as soon as possible." ]
-        |> Drawer.content
-            [ div [ class "flex-1 scroll-fade overflow-y-auto p-4" ]
-                [ RadioGroup.view [ class "gap-2" ] (List.map viewTime deliveryTimes) ]
-            ]
-        |> Drawer.footer []
-            [ Button.new
-                |> Button.text "Confirm Delivery Time"
-                |> Button.toHtml (class "h-[34px]" :: Drawer.closes "delivery")
-            , Button.new
-                |> Button.text "Cancel"
-                |> Button.outline
-                |> Button.toHtml (Drawer.closes "delivery")
-            ]
-        |> Drawer.toHtml []
+    div []
+        [ Button.new
+            |> Button.text "Open Drawer"
+            |> Button.secondary
+            |> Button.toHtml [ onClick (State.set "delivery" "open") ]
+        , Drawer.new
+            |> Drawer.id "delivery"
+            |> Drawer.open (State.get "delivery" state == Just "open") (State.set "delivery" "closed")
+            |> Drawer.nonModal
+            |> Drawer.right
+            |> Drawer.downOnMobile
+            |> Drawer.swipeable
+            |> Drawer.title [ text "Pick a delivery time" ]
+            |> Drawer.description [ text "We'll prepare your order as soon as possible." ]
+            |> Drawer.content
+                [ div [ class "flex-1 scroll-fade overflow-y-auto p-4" ]
+                    [ RadioGroup.view [ class "gap-2" ] (List.map viewTime deliveryTimes) ]
+                ]
+            |> Drawer.footer []
+                [ Button.new
+                    |> Button.text "Confirm Delivery Time"
+                    |> Button.toHtml [ class "h-[34px]", onClick (State.set "delivery" "closed") ]
+                , Button.new
+                    |> Button.text "Cancel"
+                    |> Button.outline
+                    |> Button.toHtml [ onClick (State.set "delivery" "closed") ]
+                ]
+            |> Drawer.toHtml []
+        ]
 
 
 {-| Use `up`, `right`, `down` or `left` to set the side of the drawer.
 -}
-sides : Html msg
-sides =
-    Drawer.new
-        |> Drawer.id "sides"
-        |> Drawer.trigger
-            (Button.new
-                |> Button.text "Open Left Drawer"
-                |> Button.secondary
-            )
-        |> Drawer.left
-        |> Drawer.title [ text "Move Goal" ]
-        |> Drawer.description [ text "Set your daily activity goal." ]
-        |> Drawer.content
-            [ div [ class "flex-1 p-4" ]
-                [ div [ class "size-full rounded-2xl bg-muted" ] [] ]
-            ]
-        |> Drawer.footer []
-            [ Button.new
-                |> Button.text "Close"
-                |> Button.toHtml (Drawer.closes "sides")
-            ]
-        |> Drawer.toHtml []
+sides : State -> Html State.Msg
+sides state =
+    div []
+        [ Button.new
+            |> Button.text "Open Left Drawer"
+            |> Button.secondary
+            |> Button.toHtml [ onClick (State.set "sides" "open") ]
+        , Drawer.new
+            |> Drawer.id "sides"
+            |> Drawer.open (State.get "sides" state == Just "open") (State.set "sides" "closed")
+            |> Drawer.left
+            |> Drawer.title [ text "Move Goal" ]
+            |> Drawer.description [ text "Set your daily activity goal." ]
+            |> Drawer.content
+                [ div [ class "flex-1 p-4" ]
+                    [ div [ class "size-full rounded-2xl bg-muted" ] [] ]
+                ]
+            |> Drawer.footer []
+                [ Button.new
+                    |> Button.text "Close"
+                    |> Button.toHtml [ onClick (State.set "sides" "closed") ]
+                ]
+            |> Drawer.toHtml []
+        ]
 
 
 {-| Use `swipeHandle` to render a swipe handle, and `swipeable` to let a swipe drag the drawer. Swipe it past halfway, or flick it toward the edge, to close it, or let go sooner and it settles back.
 -}
 swipeHandle : State -> Html State.Msg
 swipeHandle state =
-    Drawer.new
-        |> Drawer.id "swipe-handle"
-        |> Drawer.trigger
-            (Button.new
-                |> Button.text "Open Drawer"
-                |> Button.secondary
-            )
-        |> Drawer.swipeable (State.drawer state) State.drawerMsg
-        |> Drawer.title [ text "Drawer" ]
-        |> Drawer.description [ text "Drawer with a swipe handle." ]
-        |> Drawer.content
-            [ div [ class "flex-1 p-4" ]
-                [ div [ class "h-80 w-full rounded-2xl bg-muted" ] [] ]
-            ]
-        |> Drawer.footer []
-            [ Button.new
-                |> Button.text "Close"
-                |> Button.toHtml (Drawer.closes "swipe-handle")
-            ]
-        |> Drawer.toHtml []
+    div []
+        [ Button.new
+            |> Button.text "Open Drawer"
+            |> Button.secondary
+            |> Button.toHtml [ onClick (State.set "swipe-handle" "open") ]
+        , Drawer.new
+            |> Drawer.id "swipe-handle"
+            |> Drawer.open (State.get "swipe-handle" state == Just "open") (State.set "swipe-handle" "closed")
+            |> Drawer.swipeable
+            |> Drawer.title [ text "Drawer" ]
+            |> Drawer.description [ text "Drawer with a swipe handle." ]
+            |> Drawer.content
+                [ div [ class "flex-1 p-4" ]
+                    [ div [ class "h-80 w-full rounded-2xl bg-muted" ] [] ]
+                ]
+            |> Drawer.footer []
+                [ Button.new
+                    |> Button.text "Close"
+                    |> Button.toHtml [ onClick (State.set "swipe-handle" "closed") ]
+                ]
+            |> Drawer.toHtml []
+        ]
 
 
 {-| Open drawers from inside another drawer. Parent drawers stay open and stack behind the frontmost drawer.
@@ -139,122 +145,135 @@ nested state =
             div [ class "flex-1 p-4" ]
                 [ div [ class "bg-muted max-md:aspect-video max-md:w-full md:size-full" ] [] ]
 
+        isOpen drawerId =
+            State.get drawerId state == Just "open"
+
         close drawerId =
             Button.new
                 |> Button.text "Close"
                 |> Button.outline
-                |> Button.toHtml (Drawer.closes drawerId)
+                |> Button.toHtml [ onClick (State.set drawerId "closed") ]
 
-        opener label =
+        opener label drawerId =
             Button.new
                 |> Button.text label
                 |> Button.outline
+                |> Button.toHtml [ onClick (State.set drawerId "open") ]
     in
-    Drawer.new
-        |> Drawer.id "nested-1"
-        |> Drawer.trigger
-            (Button.new
-                |> Button.text "Open Drawer"
-                |> Button.secondary
-            )
-        |> Drawer.right
-        |> Drawer.downOnMobile
-        |> Drawer.swipeable (State.drawer state) State.drawerMsg
-        |> Drawer.title [ text "Drawer" ]
-        |> Drawer.description [ text "Open another drawer from the same direction." ]
-        |> Drawer.content [ placeholder ]
-        |> Drawer.footer []
-            [ Drawer.new
-                |> Drawer.id "nested-2"
-                |> Drawer.trigger (opener "Open Nested Drawer")
-                |> Drawer.right
-                |> Drawer.downOnMobile
-                |> Drawer.swipeable (State.drawer state) State.drawerMsg
-                |> Drawer.title [ text "Nested Drawer" ]
-                |> Drawer.description [ text "The parent drawer stays mounted behind this one." ]
-                |> Drawer.content [ placeholder ]
-                |> Drawer.footer []
-                    [ Drawer.new
-                        |> Drawer.id "nested-3"
-                        |> Drawer.trigger (opener "Open Third Drawer")
-                        |> Drawer.right
-                        |> Drawer.downOnMobile
-                        |> Drawer.title [ text "Third Drawer" ]
-                        |> Drawer.description [ text "Two drawers are stacked behind this one." ]
-                        |> Drawer.content [ placeholder ]
-                        |> Drawer.footer []
-                            [ Drawer.new
-                                |> Drawer.id "nested-4"
-                                |> Drawer.trigger (opener "Open Fourth Drawer")
-                                |> Drawer.right
-                                |> Drawer.downOnMobile
-                                |> Drawer.title [ text "Fourth Drawer" ]
-                                |> Drawer.description [ text "This is the frontmost drawer in the stack." ]
-                                |> Drawer.content [ placeholder ]
-                                |> Drawer.footer [] [ close "nested-4" ]
-                                |> Drawer.toHtml []
-                            , close "nested-3"
-                            ]
-                        |> Drawer.toHtml []
-                    , close "nested-2"
-                    ]
-                |> Drawer.toHtml []
-            , close "nested-1"
-            ]
-        |> Drawer.toHtml []
+    div []
+        [ Button.new
+            |> Button.text "Open Drawer"
+            |> Button.secondary
+            |> Button.toHtml [ onClick (State.set "nested-1" "open") ]
+        , Drawer.new
+            |> Drawer.id "nested-1"
+            |> Drawer.open (isOpen "nested-1") (State.set "nested-1" "closed")
+            |> Drawer.right
+            |> Drawer.downOnMobile
+            |> Drawer.swipeable
+            |> Drawer.title [ text "Drawer" ]
+            |> Drawer.description [ text "Open another drawer from the same direction." ]
+            |> Drawer.content [ placeholder ]
+            |> Drawer.footer []
+                [ opener "Open Nested Drawer" "nested-2"
+                , Drawer.new
+                    |> Drawer.id "nested-2"
+                    |> Drawer.open (isOpen "nested-2") (State.set "nested-2" "closed")
+                    |> Drawer.right
+                    |> Drawer.downOnMobile
+                    |> Drawer.swipeable
+                    |> Drawer.title [ text "Nested Drawer" ]
+                    |> Drawer.description [ text "The parent drawer stays mounted behind this one." ]
+                    |> Drawer.content [ placeholder ]
+                    |> Drawer.footer []
+                        [ opener "Open Third Drawer" "nested-3"
+                        , Drawer.new
+                            |> Drawer.id "nested-3"
+                            |> Drawer.open (isOpen "nested-3") (State.set "nested-3" "closed")
+                            |> Drawer.right
+                            |> Drawer.downOnMobile
+                            |> Drawer.title [ text "Third Drawer" ]
+                            |> Drawer.description [ text "Two drawers are stacked behind this one." ]
+                            |> Drawer.content [ placeholder ]
+                            |> Drawer.footer []
+                                [ opener "Open Fourth Drawer" "nested-4"
+                                , Drawer.new
+                                    |> Drawer.id "nested-4"
+                                    |> Drawer.open (isOpen "nested-4") (State.set "nested-4" "closed")
+                                    |> Drawer.right
+                                    |> Drawer.downOnMobile
+                                    |> Drawer.title [ text "Fourth Drawer" ]
+                                    |> Drawer.description [ text "This is the frontmost drawer in the stack." ]
+                                    |> Drawer.content [ placeholder ]
+                                    |> Drawer.footer [] [ close "nested-4" ]
+                                    |> Drawer.toHtml []
+                                , close "nested-3"
+                                ]
+                            |> Drawer.toHtml []
+                        , close "nested-2"
+                        ]
+                    |> Drawer.toHtml []
+                , close "nested-1"
+                ]
+            |> Drawer.toHtml []
+        ]
 
 
-{-| Use `nonModal` to allow interaction with the rest of the page while the drawer is open. It then only closes from a button with the `hides` attributes, not on a press outside.
+{-| Use `nonModal` to allow interaction with the rest of the page while the drawer is open. A press outside then doesn't close it.
 -}
-nonModal : Html msg
-nonModal =
-    Drawer.new
-        |> Drawer.id "non-modal"
-        |> Drawer.trigger
-            (Button.new
-                |> Button.text "Non Modal"
-                |> Button.outline
-            )
-        |> Drawer.nonModal
-        |> Drawer.right
-        |> Drawer.title [ text "Non Modal Drawer" ]
-        |> Drawer.content
-            [ div [ class "flex-1 p-4" ]
-                [ div [ class "size-full rounded-2xl bg-muted" ] [] ]
-            ]
-        |> Drawer.footer []
-            [ Button.new
-                |> Button.text "Close"
-                |> Button.toHtml (Drawer.hides "non-modal")
-            ]
-        |> Drawer.toHtml []
+nonModal : State -> Html State.Msg
+nonModal state =
+    div []
+        [ Button.new
+            |> Button.text "Non Modal"
+            |> Button.outline
+            |> Button.toHtml [ onClick (State.set "non-modal" "open") ]
+        , Drawer.new
+            |> Drawer.id "non-modal"
+            |> Drawer.open (State.get "non-modal" state == Just "open") (State.set "non-modal" "closed")
+            |> Drawer.nonModal
+            |> Drawer.right
+            |> Drawer.title [ text "Non Modal Drawer" ]
+            |> Drawer.content
+                [ div [ class "flex-1 p-4" ]
+                    [ div [ class "size-full rounded-2xl bg-muted" ] [] ]
+                ]
+            |> Drawer.footer []
+                [ Button.new
+                    |> Button.text "Close"
+                    |> Button.toHtml [ onClick (State.set "non-modal" "closed") ]
+                ]
+            |> Drawer.toHtml []
+        ]
 
 
 {-| Use `snapPoints` to snap a drawer to preset heights when a swipe ends. Numbers up to `1` are fractions of the viewport height, bigger ones are pixels. The drawer opens at the first one, and a swipe from the smallest one toward the edge closes it.
 -}
 snapPoints : State -> Html State.Msg
 snapPoints state =
-    Drawer.new
-        |> Drawer.id "snap-points"
-        |> Drawer.trigger
-            (Button.new
-                |> Button.text "Open Snap Drawer"
-                |> Button.outline
-            )
-        |> Drawer.snapPoints [ 496, 1 ]
-        |> Drawer.swipeable (State.drawer state) State.drawerMsg
-        |> Drawer.title [ text "Snap points" ]
-        |> Drawer.description [ text "Drag the drawer to snap between a compact peek and a near full-height view." ]
-        |> Drawer.content
-            [ div [ class "flex-1 p-4" ]
-                [ div [ class "h-80 w-full rounded-2xl bg-muted" ] [] ]
-            ]
-        |> Drawer.footer []
-            [ Button.new
-                |> Button.text "Close"
-                |> Button.toHtml (Drawer.closes "snap-points")
-            ]
-        |> Drawer.toHtml []
+    div []
+        [ Button.new
+            |> Button.text "Open Snap Drawer"
+            |> Button.outline
+            |> Button.toHtml [ onClick (State.set "snap-points" "open") ]
+        , Drawer.new
+            |> Drawer.id "snap-points"
+            |> Drawer.open (State.get "snap-points" state == Just "open") (State.set "snap-points" "closed")
+            |> Drawer.snapPoints [ 496, 1 ]
+            |> Drawer.swipeable
+            |> Drawer.title [ text "Snap points" ]
+            |> Drawer.description [ text "Drag the drawer to snap between a compact peek and a near full-height view." ]
+            |> Drawer.content
+                [ div [ class "flex-1 p-4" ]
+                    [ div [ class "h-80 w-full rounded-2xl bg-muted" ] [] ]
+                ]
+            |> Drawer.footer []
+                [ Button.new
+                    |> Button.text "Close"
+                    |> Button.toHtml [ onClick (State.set "snap-points" "closed") ]
+                ]
+            |> Drawer.toHtml []
+        ]
 
 
 {-| Combine a `Dialog` and a `Drawer` to make a responsive dialog: a `Dialog` from `md` up, a `Drawer` below it.
@@ -292,13 +311,13 @@ responsive state =
                 |> Dialog.toHtml [ class "sm:max-w-[425px]" ]
             ]
         , div [ class "md:hidden" ]
-            [ Drawer.new
+            [ Button.new
+                |> Button.text "Edit Profile"
+                |> Button.outline
+                |> Button.toHtml [ onClick (State.set "responsive-drawer" "open") ]
+            , Drawer.new
                 |> Drawer.id "responsive-drawer"
-                |> Drawer.trigger
-                    (Button.new
-                        |> Button.text "Edit Profile"
-                        |> Button.outline
-                    )
+                |> Drawer.open (State.get "responsive-drawer" state == Just "open") (State.set "responsive-drawer" "closed")
                 |> Drawer.title [ text "Edit profile" ]
                 |> Drawer.description [ text "Make changes to your profile here. Click save when you're done." ]
                 |> Drawer.content [ profileForm "responsive-drawer" [ class "p-4" ] ]

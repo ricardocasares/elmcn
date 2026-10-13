@@ -136,20 +136,8 @@
 }
 
 /*
-  The drawer's backdrop fades in with the drawer's scroll, through a view timeline, and
-  out with a clock when the drawer closes by other means than a swipe. The fade out is
-  its own animation: an animation that moves from a scroll timeline to the clock keeps
-  its progress, and would be over at once.
+  The drawer's backdrop fades in with the drawer's scroll, through a view timeline.
 */
-
-@keyframes drawer-fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
 
 @keyframes drawer-fade {
   from {

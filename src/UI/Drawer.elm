@@ -1,26 +1,20 @@
 module UI.Drawer exposing
-    ( Drawer, Ready, NeedsId
+    ( Drawer, Ready, NeedsId, NeedsOpen
     , new
-    , id
-    , trigger, opens, shows, closes, hides
+    , id, open
     , title, description, content, footer
     , down, up, left, right, downOnMobile
-    , swipeHandle, nonModal, height, width, onClose
-    , State, Msg, init, update, dismissed, swipeable, snapPoints
+    , swipeHandle, swipeable, snapPoints, nonModal, height, width
     , toHtml
     )
 
 {-| A panel that slides in from an edge of the screen.
 
-A drawer is built with `new`, given an `id` and a `trigger`, filled in with parts, and rendered with `toHtml`:
+A drawer is built with `new`, given an `id` and its `open` state, filled in with parts, and rendered with `toHtml`:
 
     Drawer.new
         |> Drawer.id "goal"
-        |> Drawer.trigger
-            (Button.new
-                |> Button.text "Open Drawer"
-                |> Button.secondary
-            )
+        |> Drawer.open model.editingGoal (SetEditingGoal False)
         |> Drawer.title [ text "Move Goal" ]
         |> Drawer.description [ text "Set your daily activity goal." ]
         |> Drawer.content [ div [ class "flex-1 p-4" ] [ text "…" ] ]
@@ -31,17 +25,24 @@ A drawer is built with `new`, given an `id` and a `trigger`, filled in with part
             , Button.new
                 |> Button.text "Cancel"
                 |> Button.outline
-                |> Button.toHtml (Drawer.closes "goal")
+                |> Button.toHtml [ onClick (SetEditingGoal False) ]
             ]
         |> Drawer.toHtml []
 
-The drawer is a native `<dialog>` opened by its trigger through an invoker command, so it sits in the top layer over a dimmed backdrop, traps focus, makes the rest of the page inert, closes on Escape, a tap on the backdrop or any button with the [`closes`](#closes) attributes, and gives focus back to the trigger, with no JavaScript, ports or component state. It slides in from the bottom unless given a [side](#sides). Drawers nest: a drawer opened from inside another one stacks in front, and the ones behind shrink and peek out from the edge.
+The open state lives in your model. Open the drawer from any button of your own:
 
-The open state lives in the browser. Give the drawer `onClose` to be told when it closes.
+    Button.new
+        |> Button.text "Open Drawer"
+        |> Button.secondary
+        |> Button.toHtml [ onClick (SetEditingGoal True) ]
 
-The [swipe handle](#swipeHandle) is a visual cue on its own. Made [`swipeable`](#swipeable), the drawer follows a swipe like a scrolling page does, then settles at the nearest of its [`snapPoints`](#snapPoints) or closes. That needs a `State` in your model and `update` in your update, but no JavaScript.
+The drawer is a native `<dialog>` inside `<elmcn-dialog>`, the same small custom element as `Dialog`'s, which opens it when `open` is true, and closes it for real once it has slid out. Import the element once from your JavaScript entry point:
 
-@docs Drawer, Ready, NeedsId
+    import "./UI/elmcn-dialog";
+
+The drawer opens in the top layer over a dimmed, blurred backdrop: it traps focus, makes the rest of the page inert and stops it scrolling. Escape, a tap on the backdrop and a swipe that [closes](#swipeable) it send the message you gave [`open`](#open), and the drawer slides out when your model says so. It slides in from the bottom unless given a [side](#sides). Drawers nest: a drawer opened from inside another one stacks in front, and the ones behind shrink and peek out from the edge.
+
+@docs Drawer, Ready, NeedsId, NeedsOpen
 
 
 # Constructor
@@ -51,14 +52,9 @@ The [swipe handle](#swipeHandle) is a visual cue on its own. Made [`swipeable`](
 
 # Required
 
-`toHtml` won't accept a drawer until it has an `id`.
+`toHtml` won't accept a drawer until it has an `id` and its `open` state.
 
-@docs id
-
-
-# Trigger
-
-@docs trigger, opens, shows, closes, hides
+@docs id, open
 
 
 # Parts
@@ -77,38 +73,14 @@ The last one wins. A vertical drawer sizes itself to its content, capped at `cal
 
 # Setters
 
-@docs swipeHandle, nonModal, height, width, onClose
+@docs swipeHandle, swipeable, snapPoints, nonModal, height, width
 
 
 # Swiping
 
-A swipe is a scroll gesture, handled by the browser rather than by Elm. The drawer sits in a scroller that is hidden but snaps to two places, closed and open, so a finger or a trackpad drags it with momentum and rubber band, off the main thread, and the backdrop fades in step with it through a CSS view timeline. A swipe that ends closed removes the open drawer, and the only thing Elm sees of it is one message.
-
-Keep a `State` in your model, route its messages through `update`, and give both to the drawer:
-
-    type alias Model =
-        { drawer : Drawer.State }
-
-    type Msg
-        = DrawerMsg Drawer.Msg
-
-    update msg model =
-        case msg of
-            DrawerMsg drawerMsg ->
-                { model | drawer = Drawer.update drawerMsg model.drawer }
-
-    view model =
-        Drawer.new
-            |> Drawer.id "sheet"
-            |> Drawer.snapPoints [ 496, 1 ]
-            |> Drawer.swipeable model.drawer DrawerMsg
-            |> Drawer.toHtml []
-
-One `State` can serve every drawer on the page. Without `swipeable` the drawer slides in the same way, but the scroller can't be dragged.
+A swipe is a scroll gesture, handled by the browser rather than by Elm. The drawer sits in a scroller that is hidden but snaps to two places, closed and open, so a finger or a trackpad drags it with momentum and rubber band, off the main thread, and the backdrop fades in step with it through a CSS view timeline. A swipe that ends closed sends the message you gave [`open`](#open), like Escape does. Without [`swipeable`](#swipeable) the drawer slides in the same way, but the scroller can't be dragged.
 
 A mouse can't drag the drawer, since a mouse doesn't scroll by dragging: the wheel and a trackpad work, and touch is the primary input. Browsers that don't support `scrollend` or view timelines keep a drawer that opens and closes, without the swipe dismissal or the synced backdrop.
-
-@docs State, Msg, init, update, dismissed, swipeable, snapPoints
 
 
 # Rendering
@@ -117,24 +89,22 @@ A mouse can't drag the drawer, since a mouse doesn't scroll by dragging: the whe
 
 -}
 
-import Dict exposing (Dict)
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (attribute, class)
 import Html.Events
-import Html.Keyed
 import Json.Decode as Decode exposing (Decoder)
-import UI.Button as Button exposing (Button)
 
 
 {-| A drawer being built.
 
-`id` is [`Ready`](#Ready) once the drawer has an [`id`](#id).
+`id` is [`Ready`](#Ready) once the drawer has an [`id`](#id), and `state` once it has its [`open`](#open) state.
 
 -}
-type Drawer id msg
+type Drawer id state msg
     = Drawer
         { id : String
-        , trigger : Maybe (List (Attribute msg) -> Html msg)
+        , open : Bool
+        , onClose : Maybe msg
         , title : List (Html msg)
         , description : List (Html msg)
         , content : List (Html msg)
@@ -142,12 +112,11 @@ type Drawer id msg
         , side : Side
         , downOnMobile : Bool
         , handle : Bool
-        , swipe : Maybe ( State, Msg -> msg )
+        , swipeable : Bool
         , snapPoints : List Float
         , modal : Bool
         , height : Maybe String
         , width : Maybe String
-        , onClose : Maybe msg
         }
 
 
@@ -156,21 +125,6 @@ type Side
     | Up
     | Left
     | Right
-
-
-{-| How many times each drawer has been swiped away.
-
-A swiped drawer is still an open `<dialog>`, and nothing but JavaScript can close that, so it is replaced by a fresh closed one: the number is part of its key.
-
--}
-type State
-    = State (Dict String Int)
-
-
-{-| What a swipeable drawer sends when a swipe closes it.
--}
-type Msg
-    = Dismissed String
 
 
 {-| The drawer can be rendered.
@@ -185,17 +139,24 @@ type NeedsId
     = NeedsId
 
 
+{-| A drawer that still needs its [`open`](#open) state before it can be rendered.
+-}
+type NeedsOpen
+    = NeedsOpen
+
+
 
 -- CONSTRUCTOR
 
 
-{-| An empty drawer sliding in from the bottom. Give it an [`id`](#id) to make it renderable.
+{-| An empty drawer sliding in from the bottom. Give it an [`id`](#id) and its [`open`](#open) state to make it renderable.
 -}
-new : Drawer NeedsId msg
+new : Drawer NeedsId NeedsOpen msg
 new =
     Drawer
         { id = ""
-        , trigger = Nothing
+        , open = False
+        , onClose = Nothing
         , title = []
         , description = []
         , content = []
@@ -203,12 +164,11 @@ new =
         , side = Down
         , downOnMobile = False
         , handle = False
-        , swipe = Nothing
+        , swipeable = False
         , snapPoints = []
         , modal = True
         , height = Nothing
         , width = Nothing
-        , onClose = Nothing
         }
 
 
@@ -216,78 +176,21 @@ new =
 -- REQUIRED
 
 
-{-| The `id` of the `<dialog>`. It must be unique on the page: the trigger and the close buttons point at it, and the title and description are named after it.
+{-| The `id` of the `<elmcn-dialog>`. It must be unique on the page: the title and description are named after it.
 -}
-id : String -> Drawer NeedsId msg -> Drawer Ready msg
+id : String -> Drawer NeedsId state msg -> Drawer Ready state msg
 id string (Drawer config) =
     Drawer { config | id = string }
 
 
+{-| Whether the drawer is open, and the message it sends when it asks to close: on Escape, a tap on the backdrop, or a swipe that ends closed. The drawer slides in and out whenever the value changes:
 
--- TRIGGER
-
-
-{-| The button that opens the drawer, rendered right before it. It takes a `Button` without its `toHtml`, and renders it with the [`opens`](#opens) attributes for this drawer, or the [`shows`](#shows) ones when the drawer is [`nonModal`](#nonModal):
-
-    Drawer.trigger
-        (Button.new
-            |> Button.text "Open Drawer"
-            |> Button.secondary
-        )
-
-For a trigger elsewhere on the page, or one that isn't a `Button`, use `opens` directly instead.
+    Drawer.open model.editingGoal (SetEditingGoal False)
 
 -}
-trigger : Button shape Button.Ready msg -> Drawer id msg -> Drawer id msg
-trigger button (Drawer config) =
-    Drawer { config | trigger = Just (\attrs -> Button.toHtml attrs button) }
-
-
-{-| The attributes that make a `<button>` open the drawer with the given `id` as a modal, for a trigger that isn't rendered next to the drawer:
-
-    Button.new
-        |> Button.text "Open Drawer"
-        |> Button.toHtml (Drawer.opens "goal")
-
--}
-opens : String -> List (Attribute msg)
-opens drawerId =
-    [ attribute "commandfor" drawerId
-    , attribute "command" "show-modal"
-    ]
-
-
-{-| The attributes that make a `<button>` open a [`nonModal`](#nonModal) drawer with the given `id`.
--}
-shows : String -> List (Attribute msg)
-shows drawerId =
-    [ attribute "commandfor" drawerId
-    , attribute "command" "show-popover"
-    ]
-
-
-{-| The attributes that make a `<button>` close the drawer with the given `id`, for a Cancel or Close button in the footer:
-
-    Button.new
-        |> Button.text "Cancel"
-        |> Button.outline
-        |> Button.toHtml (Drawer.closes "goal")
-
--}
-closes : String -> List (Attribute msg)
-closes drawerId =
-    [ attribute "commandfor" drawerId
-    , attribute "command" "close"
-    ]
-
-
-{-| The attributes that make a `<button>` close a [`nonModal`](#nonModal) drawer with the given `id`. A non-modal drawer is a popover rather than an open dialog, so `closes` does nothing to it.
--}
-hides : String -> List (Attribute msg)
-hides drawerId =
-    [ attribute "commandfor" drawerId
-    , attribute "command" "hide-popover"
-    ]
+open : Bool -> msg -> Drawer id NeedsOpen msg -> Drawer id Ready msg
+open isOpen onClose (Drawer config) =
+    Drawer { config | open = isOpen, onClose = Just onClose }
 
 
 
@@ -296,14 +199,14 @@ hides drawerId =
 
 {-| The heading of the drawer, an `<h2>` the drawer is labelled by.
 -}
-title : List (Html msg) -> Drawer id msg -> Drawer id msg
+title : List (Html msg) -> Drawer id state msg -> Drawer id state msg
 title children (Drawer config) =
     Drawer { config | title = children }
 
 
 {-| Supporting text below the title, a `<p>` the drawer is described by.
 -}
-description : List (Html msg) -> Drawer id msg -> Drawer id msg
+description : List (Html msg) -> Drawer id state msg -> Drawer id state msg
 description children (Drawer config) =
     Drawer { config | description = children }
 
@@ -313,14 +216,14 @@ description children (Drawer config) =
 A scrollable child (`overflow-y-auto`) chains to the drawer once it is scrolled to its start, so pulling it down further swipes the drawer away, like on a phone.
 
 -}
-content : List (Html msg) -> Drawer id msg -> Drawer id msg
+content : List (Html msg) -> Drawer id state msg -> Drawer id state msg
 content children (Drawer config) =
     Drawer { config | content = children }
 
 
 {-| The bottom of the drawer, with its buttons stacked and pushed to the end. The attributes come after the styles so they can override them.
 -}
-footer : List (Attribute msg) -> List (Html msg) -> Drawer id msg -> Drawer id msg
+footer : List (Attribute msg) -> List (Html msg) -> Drawer id state msg -> Drawer id state msg
 footer attrs children (Drawer config) =
     Drawer { config | footer = Just ( attrs, children ) }
 
@@ -331,35 +234,35 @@ footer attrs children (Drawer config) =
 
 {-| Slides up from the bottom. The default.
 -}
-down : Drawer id msg -> Drawer id msg
+down : Drawer id state msg -> Drawer id state msg
 down (Drawer config) =
     Drawer { config | side = Down }
 
 
 {-| Slides down from the top.
 -}
-up : Drawer id msg -> Drawer id msg
+up : Drawer id state msg -> Drawer id state msg
 up (Drawer config) =
     Drawer { config | side = Up }
 
 
 {-| Slides in from the left.
 -}
-left : Drawer id msg -> Drawer id msg
+left : Drawer id state msg -> Drawer id state msg
 left (Drawer config) =
     Drawer { config | side = Left }
 
 
 {-| Slides in from the right.
 -}
-right : Drawer id msg -> Drawer id msg
+right : Drawer id state msg -> Drawer id state msg
 right (Drawer config) =
     Drawer { config | side = Right }
 
 
 {-| Below the `md` breakpoint, slides up from the bottom with a swipe handle instead of using the side it was given. This is how shadcn's demos switch between a side drawer on desktop and a bottom sheet on phones.
 -}
-downOnMobile : Drawer id msg -> Drawer id msg
+downOnMobile : Drawer id state msg -> Drawer id state msg
 downOnMobile (Drawer config) =
     Drawer { config | downOnMobile = True }
 
@@ -370,14 +273,33 @@ downOnMobile (Drawer config) =
 
 {-| Shows a swipe handle along the edge the drawer slid in from, a bar that hints the drawer can be dragged. On its own it is purely visual; see [`swipeable`](#swipeable).
 -}
-swipeHandle : Drawer id msg -> Drawer id msg
+swipeHandle : Drawer id state msg -> Drawer id state msg
 swipeHandle (Drawer config) =
     Drawer { config | handle = True }
 
 
-{-| Opens the drawer without a backdrop, leaving the rest of the page usable and scrollable. The drawer is then a manual popover rather than a modal dialog: it stays open until a button with the [`hides`](#hides) attributes closes it, and a trigger elsewhere on the page needs the [`shows`](#shows) attributes instead of `opens`.
+{-| Lets a swipe drag the drawer, and shows the swipe handle. Let go a little over halfway out, or flick it toward its edge, and the drawer asks to close with the message you gave [`open`](#open); let go sooner and it settles back, or at the nearest of the [`snapPoints`](#snapPoints).
 -}
-nonModal : Drawer id msg -> Drawer id msg
+swipeable : Drawer id state msg -> Drawer id state msg
+swipeable (Drawer config) =
+    Drawer { config | handle = True, swipeable = True }
+
+
+{-| Heights a vertical drawer settles at when a swipe ends, instead of sizing itself to its content. A number up to `1` is a fraction of the viewport height, and a bigger one is in pixels. The drawer opens at the first one, and is as tall as the viewport behind its visible part.
+
+    Drawer.snapPoints [ 496, 1 ]
+
+A swipe from the smallest point toward the edge still closes the drawer. Side drawers ignore snap points.
+
+-}
+snapPoints : List Float -> Drawer id state msg -> Drawer id state msg
+snapPoints points (Drawer config) =
+    Drawer { config | snapPoints = points }
+
+
+{-| Opens the drawer without a backdrop, leaving the rest of the page usable and scrollable. A tap outside doesn't close it: Escape, a swipe and your own buttons still do.
+-}
+nonModal : Drawer id state msg -> Drawer id state msg
 nonModal (Drawer config) =
     Drawer { config | modal = False }
 
@@ -393,80 +315,16 @@ nonModal (Drawer config) =
         )
 
 -}
-height : String -> Drawer id msg -> Drawer id msg
+height : String -> Drawer id state msg -> Drawer id state msg
 height value (Drawer config) =
     Drawer { config | height = Just value }
 
 
 {-| A CSS width for a side drawer, such as `"30rem"`, instead of the default.
 -}
-width : String -> Drawer id msg -> Drawer id msg
+width : String -> Drawer id state msg -> Drawer id state msg
 width value (Drawer config) =
     Drawer { config | width = Just value }
-
-
-{-| Sent when the drawer closes, however it was closed except by a swipe: see [`dismissed`](#dismissed).
--}
-onClose : msg -> Drawer id msg -> Drawer id msg
-onClose msg (Drawer config) =
-    Drawer { config | onClose = Just msg }
-
-
-
--- SWIPING
-
-
-{-| No drawer has been swiped away yet.
--}
-init : State
-init =
-    State Dict.empty
-
-
-{-| Replaces a drawer that was swiped away with a closed one, ready to open again.
--}
-update : Msg -> State -> State
-update (Dismissed drawerId) (State generations) =
-    State (Dict.update drawerId (Maybe.withDefault 0 >> (+) 1 >> Just) generations)
-
-
-{-| The `id` of the drawer a message is about. A swiped drawer is replaced rather than closed, so its `close` event never fires and `onClose` is not sent. Do here whatever `onClose` would have done:
-
-    DrawerMsg drawerMsg ->
-        ( { model | drawer = Drawer.update drawerMsg model.drawer }
-        , if Drawer.dismissed drawerMsg == "goal" then
-            saveGoal model
-
-          else
-            Cmd.none
-        )
-
--}
-dismissed : Msg -> String
-dismissed (Dismissed drawerId) =
-    drawerId
-
-
-{-| Lets a swipe drag the drawer, and shows the swipe handle. It needs the `State` from your model and a way to wrap its messages. Let go a little over halfway out, or flick it toward its edge, and the drawer closes; let go sooner and it settles back, or at the nearest of the [`snapPoints`](#snapPoints).
-
-A drawer closed by a swipe is already off screen, so its `<dialog>` is replaced by a closed one, since nothing else can close a modal dialog without JavaScript. Focus is not given back to the trigger, and `onClose` is not sent; see [`dismissed`](#dismissed).
-
--}
-swipeable : State -> (Msg -> msg) -> Drawer id msg -> Drawer id msg
-swipeable state toMsg (Drawer config) =
-    Drawer { config | handle = True, swipe = Just ( state, toMsg ) }
-
-
-{-| Heights a vertical drawer settles at when a swipe ends, instead of sizing itself to its content. A number up to `1` is a fraction of the viewport height, and a bigger one is in pixels. The drawer opens at the first one, and is as tall as the viewport behind its visible part.
-
-    Drawer.snapPoints [ 496, 1 ]
-
-A swipe from the smallest point toward the edge still closes the drawer. Side drawers ignore snap points.
-
--}
-snapPoints : List Float -> Drawer id msg -> Drawer id msg
-snapPoints points (Drawer config) =
-    Drawer { config | snapPoints = points }
 
 
 snapPointCss : Float -> String
@@ -478,16 +336,16 @@ snapPointCss point =
         String.fromFloat point ++ "px"
 
 
-{-| Only a scroll that ended at the closed position of a drawer that is still open counts.
+{-| Only a scroll that ended at the closed position of a drawer that is still meant to be open counts.
 
 The drawer scrolls to 0 when it is closed, and a drawer that closes any other way, or is not open yet, rests there too. The scroll offset is negative in the directions that scroll backwards, and one axis is always 0.
 
 -}
-dismissDecoder : Bool -> msg -> Decoder msg
-dismissDecoder modal msg =
+dismissDecoder : msg -> Decoder msg
+dismissDecoder msg =
     Decode.map3
-        (\scrollTop scrollLeft open ->
-            if abs scrollTop <= 1 && abs scrollLeft <= 1 && open then
+        (\scrollTop scrollLeft _ ->
+            if abs scrollTop <= 1 && abs scrollLeft <= 1 then
                 Decode.succeed msg
 
             else
@@ -495,22 +353,40 @@ dismissDecoder modal msg =
         )
         (Decode.at [ "currentTarget", "scrollTop" ] Decode.float)
         (Decode.at [ "currentTarget", "scrollLeft" ] Decode.float)
-        (if modal then
-            Decode.at [ "currentTarget", "parentNode", "open" ] Decode.bool
-
-         else
-            Decode.succeed True
-        )
+        (Decode.at [ "currentTarget", "parentNode", "parentNode", "attributes", "open" ] Decode.value)
         |> Decode.andThen identity
+
+
+{-| Escape asks the drawer to close, caught on `keydown` before it becomes a `cancel` that would close the dialog without its exit transition, and stopped at the topmost drawer. The back gesture on Android still goes through `cancel`, and when the browser closes the dialog on its own, `close` is reported while `<elmcn-dialog>` is still `open`. See `UI.Dialog` for the details.
+-}
+closeRequests : msg -> List (Attribute msg)
+closeRequests msg =
+    [ Html.Events.custom "keydown"
+        (Decode.field "key" Decode.string
+            |> Decode.andThen
+                (\key ->
+                    if key == "Escape" then
+                        Decode.succeed { message = msg, stopPropagation = True, preventDefault = True }
+
+                    else
+                        Decode.fail key
+                )
+        )
+    , Html.Events.preventDefaultOn "cancel" (Decode.succeed ( msg, True ))
+    , Html.Events.on "close"
+        (Decode.at [ "target", "parentElement", "attributes", "open" ] Decode.value
+            |> Decode.map (\_ -> msg)
+        )
+    ]
 
 
 
 -- RENDERING
 
 
-{-| Renders the trigger, if any, followed by the `<dialog>`. The attributes go on the panel inside it, after the styles, so they can override them.
+{-| Renders the `<dialog>`. The attributes go on the panel inside it, after the styles, so they can override them.
 -}
-toHtml : List (Attribute msg) -> Drawer Ready msg -> Html msg
+toHtml : List (Attribute msg) -> Drawer Ready Ready msg -> Html msg
 toHtml attrs (Drawer config) =
     let
         titleId =
@@ -521,6 +397,9 @@ toHtml attrs (Drawer config) =
 
         hasHeader =
             not (List.isEmpty config.title && List.isEmpty config.description)
+
+        onClose =
+            List.filterMap identity [ config.onClose ]
 
         layout =
             if config.downOnMobile then
@@ -546,19 +425,6 @@ toHtml attrs (Drawer config) =
                 _ ->
                     config.snapPoints
 
-        swiping =
-            case config.swipe of
-                Just _ ->
-                    True
-
-                Nothing ->
-                    False
-
-        generation =
-            config.swipe
-                |> Maybe.andThen (\( State generations, _ ) -> Dict.get config.id generations)
-                |> Maybe.withDefault 0
-
         sizes =
             List.filterMap identity
                 [ case points of
@@ -580,232 +446,222 @@ toHtml attrs (Drawer config) =
             else
                 Nothing
     in
-    Html.Keyed.node "span"
-        [ attribute "data-slot" "drawer", class "contents" ]
-        (List.filterMap identity
-            [ Maybe.map
-                (\toButton ->
-                    ( "trigger"
-                    , toButton
-                        (attribute "data-slot" "drawer-trigger"
-                            :: (if config.modal then
-                                    opens config.id
+    Html.node "elmcn-dialog"
+        ([ Html.Attributes.id config.id
+         , attribute "data-slot" "drawer"
+         , class "contents"
+         ]
+            ++ (if config.open then
+                    [ attribute "open" "" ]
+
+                else
+                    []
+               )
+        )
+        [ -- `overflow-clip`, not `overflow-hidden`: the scroller inside does the
+          -- scrolling, and the dialog must stay put while it focuses. It shares the
+          -- panel's view timeline between the scroller and the backdrop through
+          -- `timeline-scope`.
+          Html.node "dialog"
+            ([ class "fixed inset-0 z-50 m-0 hidden h-full max-h-none w-full max-w-none overflow-clip bg-transparent p-0 text-inherit outline-none backdrop:bg-transparent open:block [timeline-scope:--drawer]"
+
+             -- Once closed, the dialog stays laid out for a moment, unseen, so that
+             -- the scroller loses its exit area and its offset clamps back to zero,
+             -- ready for the next entrance. Straight to `display: none`, Chrome would
+             -- keep the offset, and the drawer would reopen already scrolled in.
+             -- Unseen through `opacity`, not `visibility`: a button inside that
+             -- transitions `all` would stay visible for its own transition.
+             , class "transition-[display,overlay] duration-100 transition-discrete not-open:pointer-events-none not-open:opacity-0"
+             ]
+                ++ (if config.modal then
+                        -- The page behind stops scrolling while the drawer is modal,
+                        -- keeping its scrollbar gutter so that nothing shifts.
+                        [ class "[html:has(&:modal)]:overflow-hidden [html:has(&:modal)]:[scrollbar-gutter:stable]" ]
+
+                    else
+                        -- A non-modal drawer is a manual popover rather than a modal
+                        -- dialog: in the top layer, but with the page behind it still
+                        -- usable. The dialog lets clicks through to the page.
+                        [ attribute "popover" "manual"
+                        , class "pointer-events-none"
+                        ]
+                   )
+                ++ (if List.isEmpty config.title then
+                        []
+
+                    else
+                        [ attribute "aria-labelledby" titleId ]
+                   )
+                ++ (if List.isEmpty config.description then
+                        []
+
+                    else
+                        [ attribute "aria-describedby" descriptionId ]
+                   )
+                ++ List.concatMap closeRequests onClose
+            )
+            [ -- The backdrop is the dialog's own child, so `<elmcn-dialog>` waits for its
+              -- fade out before it closes the dialog. It fades in as the panel's edge
+              -- comes into view, through the view timeline, and out on a clock while
+              -- the panel slides out. The fade out is a filter, multiplied with the
+              -- opacity the timeline gives it: an animation moving from the timeline
+              -- to a clock keeps its progress, and a separate fade out would flash a
+              -- drawer that was swiped away back in. A non-modal drawer's backdrop is
+              -- transparent, and only there for its transition. In Firefox, which
+              -- scrolls the drawer in at once, the filter fades the backdrop in too.
+              Html.div
+                ([ attribute "data-slot" "drawer-backdrop"
+                 , attribute "aria-hidden" "true"
+                 , class "pointer-events-none absolute inset-0 [filter:opacity(1)] transition-[filter] duration-450 ease-linear [elmcn-dialog:not([open])>dialog>&]:[filter:opacity(0)] supports-[-moz-appearance:none]:starting:[elmcn-dialog[open]>dialog>&]:[filter:opacity(0)]"
+                 ]
+                    ++ (if config.modal then
+                            class "bg-black/10 opacity-0 backdrop-blur-xs [animation-fill-mode:both] [animation-name:drawer-fade] [animation-range:entry] [animation-timeline:--drawer] [animation-timing-function:linear]"
+                                :: backdropRange points
+
+                        else
+                            []
+                       )
+                )
+                []
+
+            -- The scroller is the drawer's whole gesture: it holds the closed and
+            -- open positions as snap points, its scrollbar is hidden, and its
+            -- scrolling is smooth, so the entrance is a scroll too.
+            , Html.div
+                ([ attribute "data-slot" "drawer-scroller"
+                 , class "absolute inset-0 scroll-smooth [scrollbar-width:none] overscroll-contain motion-reduce:scroll-auto [&::-webkit-scrollbar]:hidden"
+                 , class (scrollerClass config.swipeable layout)
+                 ]
+                    ++ (if config.swipeable then
+                            -- A swipe ends in a scroll that ends: `scroll` also fires
+                            -- while the drawer opens and closes.
+                            List.map (Html.Events.on "scrollend" << dismissDecoder) onClose
+
+                        else
+                            []
+                       )
+                    ++ (if config.modal then
+                            []
+
+                        else
+                            [ class "pointer-events-none" ]
+                       )
+                )
+                [ Html.div
+                    [ class "pointer-events-none relative flex"
+                    , class (contentClass layout)
+                    ]
+                    -- The exit area and the bleed only exist while the dialog is open.
+                    -- Chrome keeps a scroller's offset through `display: none`, so a
+                    -- drawer closed by a button would reopen already scrolled in, with
+                    -- nothing left to animate. Without them the scroller has no room,
+                    -- and its offset clamps back to zero. The exit area is the part of
+                    -- the backdrop above the panel, so a tap on it asks to close a
+                    -- modal drawer, and a drag on it swipes the drawer.
+                    [ Html.div
+                        ([ attribute "data-slot" "drawer-exit"
+                         , attribute "aria-hidden" "true"
+                         , class "shrink-0 [:not(:is([open],:popover-open))>*>*>&]:hidden"
+                         , class (exitClass layout)
+                         ]
+                            ++ (if config.modal then
+                                    class "pointer-events-auto" :: List.map Html.Events.onClick onClose
 
                                 else
-                                    shows config.id
+                                    []
                                )
                         )
-                    )
-                )
-                config.trigger
-            , Just
-                ( "dialog-" ++ String.fromInt generation
-                , Html.node "dialog"
-                    ([ Html.Attributes.id config.id
-
-                     -- `overflow-clip`, not `overflow-hidden`: the scroller inside does
-                     -- the scrolling, and the dialog must stay put while it focuses.
-                     , class "fixed inset-0 z-50 m-0 hidden h-full max-h-none w-full max-w-none overflow-clip bg-transparent p-0 text-inherit outline-none backdrop:bg-transparent open:block"
-                     ]
-                        ++ (if config.modal then
-                                -- The dialog fills the viewport so that the whole dimmed
-                                -- area is a button closing it: Safari has no `closedby`
-                                -- and phones have no Escape key. `closedby` still lets
-                                -- browsers that have it close on Escape and a click
-                                -- outside natively. The page behind stops scrolling while
-                                -- the drawer is modal, keeping its scrollbar gutter so
-                                -- that nothing shifts. The dimming is an element inside
-                                -- the dialog, not `::backdrop`: WebKit has no `overlay`
-                                -- transition, so a closing dialog leaves the top layer at
-                                -- once and its backdrop with it, while the dimming stays
-                                -- for the slide.
-                                [ attribute "closedby" "any"
-                                , class "[html:has(&:modal)]:overflow-hidden [html:has(&:modal)]:[scrollbar-gutter:stable]"
-                                ]
-
-                            else
-                                -- Invoker commands can't open a dialog non-modally, so a
-                                -- non-modal drawer is a manual popover instead: in the top
-                                -- layer, but with the page behind it still usable. The
-                                -- dialog lets clicks through to the page.
-                                [ attribute "popover" "manual"
-                                , class "pointer-events-none"
-                                ]
-                           )
-                        ++ [ -- The `display` and `overlay` changes wait for the panel to slide out.
-                             class "transition-[display,overlay] duration-450 transition-discrete"
-                           ]
-                        ++ (if List.isEmpty config.title then
-                                []
-
-                            else
-                                [ attribute "aria-labelledby" titleId ]
-                           )
-                        ++ (if List.isEmpty config.description then
-                                []
-
-                            else
-                                [ attribute "aria-describedby" descriptionId ]
-                           )
-                        ++ (case config.onClose of
-                                Just msg ->
-                                    [ Html.Events.on "close" (Decode.succeed msg) ]
-
-                                Nothing ->
-                                    []
-                           )
-                    )
-                    [ -- The scroller is the drawer's whole gesture: it holds the closed
-                      -- and open positions as snap points, its scrollbar is hidden, and
-                      -- its scrolling is smooth, so the entrance is a scroll too. It
-                      -- shares its view timeline with the backdrop through
-                      -- `timeline-scope`, since the backdrop is not inside the panel.
-                      Html.div
-                        ([ attribute "data-slot" "drawer-scroller"
-                         , class "absolute inset-0 [timeline-scope:--drawer] scroll-smooth [scrollbar-width:none] overscroll-contain motion-reduce:scroll-auto [&::-webkit-scrollbar]:hidden"
-                         , class (scrollerClass swiping layout)
+                        []
+                    , Html.div
+                        ([ attribute "data-slot" "drawer-stage"
+                         , class "shrink-0 outline-none"
+                         , class (stageClass (not (List.isEmpty points)) layout)
                          ]
-                            ++ (case config.swipe of
-                                    Just ( _, toMsg ) ->
-                                        -- A swipe ends in a scroll that ends: `scroll` also
-                                        -- fires while the drawer opens and closes.
-                                        [ Html.Events.on "scrollend" (dismissDecoder config.modal (toMsg (Dismissed config.id))) ]
-
-                                    Nothing ->
-                                        []
-                               )
-                            ++ (if config.modal then
-                                    []
+                            ++ (if List.isEmpty points then
+                                    entrance
 
                                 else
-                                    [ class "pointer-events-none" ]
+                                    []
                                )
                         )
                         [ Html.div
-                            [ class "pointer-events-none relative flex"
-                            , class (contentClass layout)
-                            ]
-                            (List.filterMap identity
-                                [ if config.modal then
-                                    -- It covers all of what scrolls, behind everything else,
-                                    -- and fades in as the panel's edge comes into view.
-                                    Just
-                                        (Html.button
-                                            ([ Html.Attributes.type_ "button"
-                                             , attribute "data-slot" "drawer-backdrop"
-                                             , attribute "aria-hidden" "true"
-                                             , Html.Attributes.tabindex -1
-                                             , class "pointer-events-auto absolute inset-0 cursor-default bg-black/10 opacity-0 backdrop-blur-xs [animation-fill-mode:both] [animation-name:drawer-fade] [animation-range:entry] [animation-timeline:--drawer] [animation-timing-function:linear] [dialog:not([open])_&]:[animation:drawer-fade-out_450ms_linear_both]"
-                                             ]
-                                                ++ backdropRange points
-                                                ++ closes config.id
-                                            )
-                                            []
-                                        )
+                            ([ attribute "data-slot" "drawer-popup"
+                             , class "group/drawer-popup pointer-events-auto relative flex min-h-0 bg-popover text-sm text-popover-foreground outline-none select-none will-change-transform [interpolate-size:allow-keywords]"
 
-                                  else
-                                    Nothing
+                             -- Slides in while its own `<elmcn-dialog>` is `open`, and out
+                             -- once it isn't. Shrinks and peeks out behind the drawers
+                             -- nested in it, one step per level.
+                             , class "transition-[translate,scale,filter,height] duration-450 ease-[cubic-bezier(0.22,1,0.36,1)] [&:has(elmcn-dialog[open])]:overflow-hidden [&:has(elmcn-dialog[open])]:brightness-95 [&:has(elmcn-dialog[open])]:scale-95 [&:has(elmcn-dialog[open]_elmcn-dialog[open])]:scale-90 [&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:scale-[0.85]"
+                             , class (panelClass layout)
+                             ]
+                                ++ (if List.isEmpty sizes then
+                                        []
 
-                                -- The exit area and the bleed only exist while the drawer is
-                                -- open. Chrome keeps a scroller's offset through `display:
-                                -- none`, so a drawer closed by a button would reopen already
-                                -- scrolled in, with nothing left to animate. Without them the
-                                -- scroller has no room, and its offset clamps back to zero.
-                                , Just (Html.div [ class "shrink-0 [:not(:is([open],:popover-open))>*>*>&]:hidden", class (exitClass layout) ] [])
-                                , Just
-                                    (Html.div
-                                        ([ attribute "data-slot" "drawer-stage"
-                                         , class "shrink-0 outline-none"
-                                         , class (stageClass (not (List.isEmpty points)) layout)
-                                         ]
-                                            ++ (if List.isEmpty points then
-                                                    entrance
-
-                                                else
-                                                    []
-                                               )
-                                        )
-                                        [ Html.div
-                                            ([ attribute "data-slot" "drawer-popup"
-                                             , class "group/drawer-popup pointer-events-auto relative flex min-h-0 bg-popover text-sm text-popover-foreground outline-none select-none will-change-transform [interpolate-size:allow-keywords]"
-
-                                             -- Slides from its edge on close, and shrinks and peeks out behind
-                                             -- the drawers nested in it, one step per level.
-                                             , class "transition-[translate,scale,filter,height] duration-450 ease-[cubic-bezier(0.22,1,0.36,1)] [&:has(dialog[open])]:overflow-hidden [&:has(dialog[open])]:brightness-95 [&:has(dialog[open])]:scale-95 [&:has(dialog[open]_dialog[open])]:scale-90 [&:has(dialog[open]_dialog[open]_dialog[open])]:scale-[0.85]"
-                                             , class (panelClass layout)
-                                             ]
-                                                ++ (if List.isEmpty sizes then
-                                                        []
-
-                                                    else
-                                                        [ attribute "style" (String.join "; " sizes) ]
-                                                   )
-                                                ++ attrs
-                                            )
-                                            (List.concat
-                                                [ List.indexedMap (viewSnapPoint layout) points
-                                                , List.filterMap identity [ handle ]
-                                                , [ Html.div
-                                                        [ attribute "data-slot" "drawer-content"
-                                                        , class "flex min-h-0 flex-1 flex-col overflow-hidden overscroll-auto rounded-[inherit] transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text [&:has(dialog[open])]:opacity-0"
+                                    else
+                                        [ attribute "style" (String.join "; " sizes) ]
+                                   )
+                                ++ attrs
+                            )
+                            (List.concat
+                                [ List.indexedMap (viewSnapPoint layout) points
+                                , List.filterMap identity [ handle ]
+                                , [ Html.div
+                                        [ attribute "data-slot" "drawer-content"
+                                        , class "flex min-h-0 flex-1 flex-col overflow-hidden overscroll-auto rounded-[inherit] transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text [&:has(elmcn-dialog[open])]:opacity-0"
+                                        ]
+                                        (List.filterMap identity
+                                            [ if hasHeader then
+                                                Just
+                                                    (Html.div
+                                                        [ attribute "data-slot" "drawer-header"
+                                                        , class "flex shrink-0 flex-col gap-0.5 p-4 pb-0 md:gap-0.5 md:text-left"
+                                                        , class (headerClass layout)
                                                         ]
                                                         (List.filterMap identity
-                                                            [ if hasHeader then
-                                                                Just
-                                                                    (Html.div
-                                                                        [ attribute "data-slot" "drawer-header"
-                                                                        , class "flex shrink-0 flex-col gap-0.5 p-4 pb-0 md:gap-0.5 md:text-left"
-                                                                        , class (headerClass layout)
-                                                                        ]
-                                                                        (List.filterMap identity
-                                                                            [ if List.isEmpty config.title then
-                                                                                Nothing
-
-                                                                              else
-                                                                                Just
-                                                                                    (Html.h2
-                                                                                        [ Html.Attributes.id titleId
-                                                                                        , attribute "data-slot" "drawer-title"
-                                                                                        , class "text-base font-medium text-foreground"
-                                                                                        ]
-                                                                                        config.title
-                                                                                    )
-                                                                            , if List.isEmpty config.description then
-                                                                                Nothing
-
-                                                                              else
-                                                                                Just
-                                                                                    (Html.p
-                                                                                        [ Html.Attributes.id descriptionId
-                                                                                        , attribute "data-slot" "drawer-description"
-                                                                                        , class "text-sm text-balance text-muted-foreground"
-                                                                                        ]
-                                                                                        config.description
-                                                                                    )
-                                                                            ]
-                                                                        )
-                                                                    )
+                                                            [ if List.isEmpty config.title then
+                                                                Nothing
 
                                                               else
+                                                                Just
+                                                                    (Html.h2
+                                                                        [ Html.Attributes.id titleId
+                                                                        , attribute "data-slot" "drawer-title"
+                                                                        , class "text-base font-medium text-foreground"
+                                                                        ]
+                                                                        config.title
+                                                                    )
+                                                            , if List.isEmpty config.description then
                                                                 Nothing
+
+                                                              else
+                                                                Just
+                                                                    (Html.p
+                                                                        [ Html.Attributes.id descriptionId
+                                                                        , attribute "data-slot" "drawer-description"
+                                                                        , class "text-sm text-balance text-muted-foreground"
+                                                                        ]
+                                                                        config.description
+                                                                    )
                                                             ]
-                                                            ++ config.content
-                                                            ++ List.filterMap identity
-                                                                [ Maybe.map viewFooter config.footer ]
                                                         )
-                                                  ]
-                                                ]
-                                            )
-                                        ]
-                                    )
-                                , Just (Html.div [ class "relative shrink-0 bg-popover [:not(:is([open],:popover-open))>*>*>&]:hidden", class (bleedClass layout) ] [])
+                                                    )
+
+                                              else
+                                                Nothing
+                                            ]
+                                            ++ config.content
+                                            ++ List.filterMap identity
+                                                [ Maybe.map viewFooter config.footer ]
+                                        )
+                                  ]
                                 ]
                             )
                         ]
+                    , Html.div [ class "relative shrink-0 bg-popover [:not(:is([open],:popover-open))>*>*>&]:hidden", class (bleedClass layout) ] []
                     ]
-                )
+                ]
             ]
-        )
+        ]
 
 
 viewFooter : ( List (Attribute msg), List (Html msg) ) -> Html msg
@@ -824,7 +680,7 @@ viewHandle layout attrs =
     Html.div
         ([ attribute "data-slot" "drawer-swipe-handle"
          , attribute "aria-hidden" "true"
-         , class "relative z-10 flex shrink-0 transition-opacity duration-200 after:block after:shrink-0 after:rounded-full after:bg-muted [:has(dialog[open])>&]:opacity-0"
+         , class "relative z-10 flex shrink-0 transition-opacity duration-200 after:block after:shrink-0 after:rounded-full after:bg-muted [:has(elmcn-dialog[open])>&]:opacity-0"
          , class (handleClass layout)
          ]
             ++ attrs
@@ -885,6 +741,14 @@ viewSnapPoint layout index point =
 {-| A fixed side, or a side from `md` up with the bottom below it. Tailwind only finds
 classes written out in full, so every combination is spelled out below.
 
+The panel is in while its own `<elmcn-dialog>` is `open`. `:where` keeps that selector as specific
+as a class and an attribute, so that the steps back behind nested drawers, which add a `:has`, win
+over it.
+
+Firefox, the browser with `-moz-appearance`, ignores `scroll-behavior` when it scrolls what it
+focuses into view, so the entrance there is a jump. It slides the panel in from `@starting-style`
+instead.
+
 Every layout is the same scroller seen from a different edge. It scrolls along the axis the drawer
 slides on, and a swipe is a scroll toward the origin, where the closed drawer rests. The origin is
 the top for `Down`, the bottom for `Up`, the left for `Right` and the right for `Left`, which is why
@@ -900,28 +764,28 @@ panelClass : Layout -> String
 panelClass layout =
     case layout of
         FixedSide Down ->
-            "flex-col rounded-t-xl border-t origin-bottom h-(--drawer-height) max-h-(--drawer-max-height) [--drawer-height:auto] [--drawer-max-height:calc(100dvh-6rem)] translate-y-[calc(100%+2px)] [:is([open],:popover-open)>*>*>*>&]:translate-y-0 [&:has(dialog[open])]:-translate-y-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:-translate-y-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-y-[calc(3rem+15%)] [view-timeline:--drawer_y]"
+            "flex-col rounded-t-xl border-t origin-bottom h-(--drawer-height) max-h-(--drawer-max-height) [--drawer-height:auto] [--drawer-max-height:calc(100dvh-6rem)] translate-y-[calc(100%+2px)] [:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-y-0 supports-[-moz-appearance:none]:starting:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-y-[calc(100%+2px)] [&:has(elmcn-dialog[open])]:-translate-y-[calc(1rem+5%)] [&:has(elmcn-dialog[open]_elmcn-dialog[open])]:-translate-y-[calc(2rem+10%)] [&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:-translate-y-[calc(3rem+15%)] [view-timeline:--drawer_y]"
 
         FixedSide Up ->
-            "flex-col rounded-b-xl border-b origin-top h-(--drawer-height) max-h-(--drawer-max-height) [--drawer-height:auto] [--drawer-max-height:calc(100dvh-6rem)] -translate-y-[calc(100%+2px)] [:is([open],:popover-open)>*>*>*>&]:translate-y-0 [&:has(dialog[open])]:translate-y-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:translate-y-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:translate-y-[calc(3rem+15%)] [view-timeline:--drawer_y]"
+            "flex-col rounded-b-xl border-b origin-top h-(--drawer-height) max-h-(--drawer-max-height) [--drawer-height:auto] [--drawer-max-height:calc(100dvh-6rem)] -translate-y-[calc(100%+2px)] [:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-y-0 supports-[-moz-appearance:none]:starting:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:-translate-y-[calc(100%+2px)] [&:has(elmcn-dialog[open])]:translate-y-[calc(1rem+5%)] [&:has(elmcn-dialog[open]_elmcn-dialog[open])]:translate-y-[calc(2rem+10%)] [&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:translate-y-[calc(3rem+15%)] [view-timeline:--drawer_y]"
 
         FixedSide Left ->
-            "h-full flex-row rounded-r-xl border-r origin-left w-(--drawer-width) [--drawer-width:75dvw] sm:[--drawer-width:24rem] -translate-x-[calc(100%+2px)] [:is([open],:popover-open)>*>*>*>&]:translate-x-0 [&:has(dialog[open])]:translate-x-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:translate-x-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:translate-x-[calc(3rem+15%)] [view-timeline:--drawer_x]"
+            "h-full flex-row rounded-r-xl border-r origin-left w-(--drawer-width) [--drawer-width:75dvw] sm:[--drawer-width:24rem] -translate-x-[calc(100%+2px)] [:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-x-0 supports-[-moz-appearance:none]:starting:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:-translate-x-[calc(100%+2px)] [&:has(elmcn-dialog[open])]:translate-x-[calc(1rem+5%)] [&:has(elmcn-dialog[open]_elmcn-dialog[open])]:translate-x-[calc(2rem+10%)] [&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:translate-x-[calc(3rem+15%)] [view-timeline:--drawer_x]"
 
         FixedSide Right ->
-            "h-full flex-row rounded-l-xl border-l origin-right w-(--drawer-width) [--drawer-width:75dvw] sm:[--drawer-width:24rem] translate-x-[calc(100%+2px)] [:is([open],:popover-open)>*>*>*>&]:translate-x-0 [&:has(dialog[open])]:-translate-x-[calc(1rem+5%)] [&:has(dialog[open]_dialog[open])]:-translate-x-[calc(2rem+10%)] [&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-x-[calc(3rem+15%)] [view-timeline:--drawer_x]"
+            "h-full flex-row rounded-l-xl border-l origin-right w-(--drawer-width) [--drawer-width:75dvw] sm:[--drawer-width:24rem] translate-x-[calc(100%+2px)] [:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-x-0 supports-[-moz-appearance:none]:starting:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-x-[calc(100%+2px)] [&:has(elmcn-dialog[open])]:-translate-x-[calc(1rem+5%)] [&:has(elmcn-dialog[open]_elmcn-dialog[open])]:-translate-x-[calc(2rem+10%)] [&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:-translate-x-[calc(3rem+15%)] [view-timeline:--drawer_x]"
 
         DownBelowMd side ->
-            "max-md:flex-col max-md:rounded-t-xl max-md:border-t max-md:origin-bottom max-md:h-(--drawer-height) max-md:max-h-(--drawer-max-height) max-md:[--drawer-height:auto] max-md:[--drawer-max-height:calc(100dvh-6rem)] max-md:translate-y-[calc(100%+2px)] max-md:[:is([open],:popover-open)>*>*>*>&]:translate-y-0 max-md:[&:has(dialog[open])]:-translate-y-[calc(1rem+5%)] max-md:[&:has(dialog[open]_dialog[open])]:-translate-y-[calc(2rem+10%)] max-md:[&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-y-[calc(3rem+15%)] max-md:[view-timeline:--drawer_y] "
+            "max-md:flex-col max-md:rounded-t-xl max-md:border-t max-md:origin-bottom max-md:h-(--drawer-height) max-md:max-h-(--drawer-max-height) max-md:[--drawer-height:auto] max-md:[--drawer-max-height:calc(100dvh-6rem)] max-md:translate-y-[calc(100%+2px)] max-md:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-y-0 max-md:supports-[-moz-appearance:none]:starting:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-y-[calc(100%+2px)] max-md:[&:has(elmcn-dialog[open])]:-translate-y-[calc(1rem+5%)] max-md:[&:has(elmcn-dialog[open]_elmcn-dialog[open])]:-translate-y-[calc(2rem+10%)] max-md:[&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:-translate-y-[calc(3rem+15%)] max-md:[view-timeline:--drawer_y] "
                 ++ (case side of
                         Up ->
-                            "md:flex-col md:rounded-b-xl md:border-b md:origin-top md:h-(--drawer-height) md:max-h-(--drawer-max-height) md:[--drawer-height:auto] md:[--drawer-max-height:calc(100dvh-6rem)] md:-translate-y-[calc(100%+2px)] md:[:is([open],:popover-open)>*>*>*>&]:translate-y-0 md:[&:has(dialog[open])]:translate-y-[calc(1rem+5%)] md:[&:has(dialog[open]_dialog[open])]:translate-y-[calc(2rem+10%)] md:[&:has(dialog[open]_dialog[open]_dialog[open])]:translate-y-[calc(3rem+15%)] md:[view-timeline:--drawer_y]"
+                            "md:flex-col md:rounded-b-xl md:border-b md:origin-top md:h-(--drawer-height) md:max-h-(--drawer-max-height) md:[--drawer-height:auto] md:[--drawer-max-height:calc(100dvh-6rem)] md:-translate-y-[calc(100%+2px)] md:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-y-0 md:supports-[-moz-appearance:none]:starting:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:-translate-y-[calc(100%+2px)] md:[&:has(elmcn-dialog[open])]:translate-y-[calc(1rem+5%)] md:[&:has(elmcn-dialog[open]_elmcn-dialog[open])]:translate-y-[calc(2rem+10%)] md:[&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:translate-y-[calc(3rem+15%)] md:[view-timeline:--drawer_y]"
 
                         Left ->
-                            "md:h-full md:flex-row md:rounded-r-xl md:border-r md:origin-left md:w-(--drawer-width) md:[--drawer-width:24rem] md:-translate-x-[calc(100%+2px)] md:[:is([open],:popover-open)>*>*>*>&]:translate-x-0 md:[&:has(dialog[open])]:translate-x-[calc(1rem+5%)] md:[&:has(dialog[open]_dialog[open])]:translate-x-[calc(2rem+10%)] md:[&:has(dialog[open]_dialog[open]_dialog[open])]:translate-x-[calc(3rem+15%)] md:[view-timeline:--drawer_x]"
+                            "md:h-full md:flex-row md:rounded-r-xl md:border-r md:origin-left md:w-(--drawer-width) md:[--drawer-width:24rem] md:-translate-x-[calc(100%+2px)] md:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-x-0 md:supports-[-moz-appearance:none]:starting:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:-translate-x-[calc(100%+2px)] md:[&:has(elmcn-dialog[open])]:translate-x-[calc(1rem+5%)] md:[&:has(elmcn-dialog[open]_elmcn-dialog[open])]:translate-x-[calc(2rem+10%)] md:[&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:translate-x-[calc(3rem+15%)] md:[view-timeline:--drawer_x]"
 
                         _ ->
-                            "md:h-full md:flex-row md:rounded-l-xl md:border-l md:origin-right md:w-(--drawer-width) md:[--drawer-width:24rem] md:translate-x-[calc(100%+2px)] md:[:is([open],:popover-open)>*>*>*>&]:translate-x-0 md:[&:has(dialog[open])]:-translate-x-[calc(1rem+5%)] md:[&:has(dialog[open]_dialog[open])]:-translate-x-[calc(2rem+10%)] md:[&:has(dialog[open]_dialog[open]_dialog[open])]:-translate-x-[calc(3rem+15%)] md:[view-timeline:--drawer_x]"
+                            "md:h-full md:flex-row md:rounded-l-xl md:border-l md:origin-right md:w-(--drawer-width) md:[--drawer-width:24rem] md:translate-x-[calc(100%+2px)] md:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-x-0 md:supports-[-moz-appearance:none]:starting:[:where(elmcn-dialog)[open]>:where(dialog)>*>*>*>&]:translate-x-[calc(100%+2px)] md:[&:has(elmcn-dialog[open])]:-translate-x-[calc(1rem+5%)] md:[&:has(elmcn-dialog[open]_elmcn-dialog[open])]:-translate-x-[calc(2rem+10%)] md:[&:has(elmcn-dialog[open]_elmcn-dialog[open]_elmcn-dialog[open])]:-translate-x-[calc(3rem+15%)] md:[view-timeline:--drawer_x]"
                    )
 
 

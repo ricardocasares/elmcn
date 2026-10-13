@@ -60,7 +60,7 @@
       "type": "registry:item",
       "title": "Alert Dialog",
       "description": "A modal dialog that interrupts the user with important content and expects a response.",
-      "docs": "Run `elm install elm/json` as well: the alert dialog decodes its close event.",
+      "docs": "Run `elm install elm/json` as well: the alert dialog decodes its close event. Then add `import \"./UI/elmcn-dialog\";` to your JavaScript entry point: it defines the `<elmcn-dialog>` element that opens and closes the alert dialog.",
       "registryDependencies": [
         "ricardocasares/elmcn/button"
       ],
@@ -75,6 +75,11 @@
           "path": "src/UI/AlertDialog.elm",
           "type": "registry:file",
           "target": "~/src/UI/AlertDialog.elm"
+        },
+        {
+          "path": "src/UI/elmcn-dialog.ts",
+          "type": "registry:file",
+          "target": "~/src/UI/elmcn-dialog.ts"
         }
       ]
     },
@@ -276,10 +281,7 @@
       "type": "registry:item",
       "title": "Drawer",
       "description": "A panel that slides in from an edge of the screen.",
-      "docs": "Run `elm install elm/json` as well: the drawer decodes its close event.",
-      "registryDependencies": [
-        "ricardocasares/elmcn/button"
-      ],
+      "docs": "Run `elm install elm/json` as well: the drawer decodes its close event. Then add `import \"./UI/elmcn-dialog\";` to your JavaScript entry point: it defines the `<elmcn-dialog>` element that opens and closes the drawer.",
       "meta": {
         "elmDependencies": [
           "elm/html",
@@ -291,6 +293,11 @@
           "path": "src/UI/Drawer.elm",
           "type": "registry:file",
           "target": "~/src/UI/Drawer.elm"
+        },
+        {
+          "path": "src/UI/elmcn-dialog.ts",
+          "type": "registry:file",
+          "target": "~/src/UI/elmcn-dialog.ts"
         }
       ]
     },

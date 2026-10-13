@@ -88,10 +88,11 @@ the item you name, not to the items it depends on.
 | `toggle` | `UI.Toggle` |
 | `toggle-group` | `UI.ToggleGroup` |
 
-None of the components need ports or their own `Model`/`update`. Dialog is the one
-that comes with a little TypeScript: `src/UI/elmcn-dialog.ts` defines the `<elmcn-dialog>`
-element that opens and closes it and waits for its transitions, so import it once from
-your JavaScript entry point (`import "./UI/elmcn-dialog";`). Checkbox, Switch,
+None of the components need ports or their own `Model`/`update`. Dialog, Alert Dialog
+and Drawer are the ones that come with a little TypeScript: `src/UI/elmcn-dialog.ts`
+defines the `<elmcn-dialog>` element that opens and closes them and waits for their
+transitions, so import it once from your JavaScript entry point
+(`import "./UI/elmcn-dialog";`). Checkbox, Switch,
 Radio Group and Native Select are styled native inputs, so `checked`, `onCheck`,
 `onInput` and forms work as usual. Select keeps its value in your model and opens as a
 native popover, positioned with CSS anchor positioning. Slider keeps its values in your

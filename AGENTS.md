@@ -33,8 +33,9 @@ install flow, read `README.md`, `package.json` and the header comments in `scrip
 - Behaviour stays in Elm. No JS, no ports, no new Elm packages for component logic.
   Positioning, keyboard navigation and open/close state are done with Elm and CSS.
   Avoid adding `elm/svg` or other packages to a component when CSS can do the job.
-- The exception is Dialog, which wraps its `<dialog>` in `<elmcn-dialog>` (`src/UI/elmcn-dialog.ts`),
-  a thin custom element for the imperative `showModal`/`close` and for waiting on
+- The exception is Dialog, AlertDialog and Drawer, which wrap their `<dialog>` in `<elmcn-dialog>` (`src/UI/elmcn-dialog.ts`),
+  a thin custom element for the imperative `showModal`/`close` (or `showPopover`/`hidePopover`
+  for a non-modal drawer) and for waiting on
   `transitionend`. Keep it thin: attributes in, DOM events out, no rendering.
 
 ## Formatting
