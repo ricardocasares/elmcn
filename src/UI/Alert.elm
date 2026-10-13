@@ -3,7 +3,7 @@ module UI.Alert exposing
     , new
     , title, description, icon, action
     , toHtml
-    , destructive
+    , destructive, colors
     )
 
 {-| Displays a callout for user attention.
@@ -58,7 +58,7 @@ An optional icon is placed in its own column, and an action is pinned to the top
 
 The default variant is neutral. When several variants are given, the last one wins.
 
-@docs destructive
+@docs destructive, colors
 
 -}
 
@@ -96,6 +96,7 @@ type NeedsTitle
 type Variant
     = Default
     | Destructive
+    | Custom String
 
 
 
@@ -147,10 +148,24 @@ action child (Alert config) =
     Alert { config | action = Just child }
 
 
-{-| -}
+{-| Red text, for errors.
+-}
 destructive : Alert status msg -> Alert status msg
 destructive (Alert config) =
     Alert { config | variant = Destructive }
+
+
+{-| Your own colour classes in place of the default card colours, so they never clash with them:
+
+    Alert.new
+        |> Alert.colors "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-50"
+        |> Alert.title [ text "Your subscription will expire in 3 days." ]
+        |> Alert.toHtml []
+
+-}
+colors : String -> Alert status msg -> Alert status msg
+colors classes (Alert config) =
+    Alert { config | variant = Custom classes }
 
 
 
@@ -195,3 +210,6 @@ variantClass variant =
 
         Destructive ->
             "bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current"
+
+        Custom classes ->
+            classes
