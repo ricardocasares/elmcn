@@ -81,7 +81,7 @@ Every part is optional. The header appears when the dialog has `media`, a `title
 -}
 
 import Html exposing (Attribute, Html)
-import Html.Attributes exposing (attribute, class, classList)
+import Html.Attributes exposing (attribute, class, classList, tabindex)
 import Html.Events
 import Json.Decode as Decode
 import UI.Button as Button exposing (Button)
@@ -437,9 +437,10 @@ toHtml attrs (AlertDialog config) =
                                                 "grid grid-cols-2"
                                             )
                                         ]
+                                        -- Safari only tabs to buttons with an explicit `tabindex`.
                                         (List.filterMap identity
-                                            [ Maybe.map (\toButton -> toButton (attribute "data-slot" "alert-dialog-cancel" :: closes config.id)) config.cancel
-                                            , Maybe.map (\toButton -> toButton (attribute "data-slot" "alert-dialog-action" :: closes config.id)) config.action
+                                            [ Maybe.map (\toButton -> toButton (attribute "data-slot" "alert-dialog-cancel" :: tabindex 0 :: closes config.id)) config.cancel
+                                            , Maybe.map (\toButton -> toButton (attribute "data-slot" "alert-dialog-action" :: tabindex 0 :: closes config.id)) config.action
                                             ]
                                         )
                                     )

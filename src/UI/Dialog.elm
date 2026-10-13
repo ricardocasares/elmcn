@@ -76,7 +76,7 @@ Every part is optional. The header appears when the dialog has a `title` or a `d
 -}
 
 import Html exposing (Attribute, Html)
-import Html.Attributes exposing (attribute, class)
+import Html.Attributes exposing (attribute, class, tabindex)
 import Html.Events
 import Json.Decode as Decode
 import UI.Button as Button exposing (Button)
@@ -415,5 +415,7 @@ viewCloseButton dialogId =
         |> Button.toHtml
             (attribute "data-slot" "dialog-close"
                 :: class "absolute top-2 right-2"
+                -- Safari only tabs to buttons with an explicit `tabindex`.
+                :: tabindex 0
                 :: closes dialogId
             )

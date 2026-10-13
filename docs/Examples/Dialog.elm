@@ -1,7 +1,7 @@
 module Examples.Dialog exposing (..)
 
 import Html exposing (Html, div, p, text)
-import Html.Attributes exposing (class, dir, for, id, readonly, value)
+import Html.Attributes exposing (class, dir, for, id, readonly, tabindex, value)
 import State exposing (State)
 import UI.Button as Button
 import UI.Dialog as Dialog
@@ -37,10 +37,10 @@ demo =
             [ Button.new
                 |> Button.text "Cancel"
                 |> Button.outline
-                |> Button.toHtml (Dialog.closes "edit-profile")
+                |> Button.toHtml (tabindex 0 :: Dialog.closes "edit-profile")
             , Button.new
                 |> Button.text "Save changes"
-                |> Button.toHtml (Dialog.closes "edit-profile")
+                |> Button.toHtml (tabindex 0 :: Dialog.closes "edit-profile")
             ]
         |> Dialog.toHtml [ class "sm:max-w-sm" ]
 
@@ -69,7 +69,7 @@ customCloseButton =
         |> Dialog.footer [ class "sm:justify-start" ]
             [ Button.new
                 |> Button.text "Close"
-                |> Button.toHtml (Dialog.closes "share")
+                |> Button.toHtml (tabindex 0 :: Dialog.closes "share")
             ]
         |> Dialog.toHtml [ class "sm:max-w-md" ]
 
@@ -112,7 +112,7 @@ stickyFooter =
             [ Button.new
                 |> Button.text "Close"
                 |> Button.outline
-                |> Button.toHtml (Dialog.closes "sticky-footer")
+                |> Button.toHtml (tabindex 0 :: Dialog.closes "sticky-footer")
             ]
         |> Dialog.toHtml []
 
@@ -167,10 +167,10 @@ rtl =
                 [ Button.new
                     |> Button.text "إلغاء"
                     |> Button.outline
-                    |> Button.toHtml (Dialog.closes "edit-profile-rtl")
+                    |> Button.toHtml (tabindex 0 :: Dialog.closes "edit-profile-rtl")
                 , Button.new
                     |> Button.text "حفظ التغييرات"
-                    |> Button.toHtml (Dialog.closes "edit-profile-rtl")
+                    |> Button.toHtml (tabindex 0 :: Dialog.closes "edit-profile-rtl")
                 ]
             |> Dialog.toHtml [ class "sm:max-w-sm", dir "rtl" ]
         ]
@@ -204,7 +204,7 @@ closeEvent state =
             |> Dialog.footer []
                 [ Button.new
                     |> Button.text "Continue"
-                    |> Button.toHtml (Dialog.closes "close-event")
+                    |> Button.toHtml (tabindex 0 :: Dialog.closes "close-event")
                 ]
             |> Dialog.toHtml []
         ]
