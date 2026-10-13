@@ -399,6 +399,26 @@
       ]
     },
     {
+      "name": "input-otp",
+      "type": "registry:item",
+      "title": "Input OTP",
+      "description": "Accessible one-time password component with copy-paste functionality.",
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/json"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/InputOtp.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/InputOtp.elm"
+        }
+      ],
+      "docs": "Run `elm install elm/json` as well: the input OTP decodes its input events."
+    },
+    {
       "name": "kbd",
       "type": "registry:item",
       "title": "Kbd",

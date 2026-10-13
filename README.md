@@ -69,6 +69,7 @@ the item you name, not to the items it depends on.
 | `field` | `UI.Field` |
 | `input` | `UI.Input` |
 | `input-group` | `UI.InputGroup` |
+| `input-otp` | `UI.InputOtp` |
 | `kbd` | `UI.Kbd` |
 | `label` | `UI.Label` |
 | `native-select` | `UI.NativeSelect` |
@@ -96,7 +97,9 @@ transitions, so import it once from your JavaScript entry point
 Radio Group and Native Select are styled native inputs, so `checked`, `onCheck`,
 `onInput` and forms work as usual. Select keeps its value in your model and opens as a
 native popover, positioned with CSS anchor positioning. Slider keeps its values in your
-model too, with one native range input per thumb.
+model too, with one native range input per thumb. Input OTP is one styled native text
+input stretched over its slots, with the code in your model, so paste, SMS autofill and
+forms work.
 
 ## Conventions
 
@@ -106,12 +109,13 @@ model too, with one native range input per thumb.
 `Pagination.link`, `Table.row`, and so on.
 
 **Components with options or content are builders.** Button, Badge, Alert, Attachment, Avatar, Breadcrumb, Card, Empty, Kbd,
-Native Select, Progress, Select, Separator, Slider and Switch start
+Input OTP, Native Select, Progress, Select, Separator, Slider and Switch start
 with `new`, add content, pipe through setters, and render at the end. The compiler won't
 let you render until the required content is there: a button needs `text`, or `icon` and
 an accessible `label`; a badge needs `text`; an alert or an attachment needs `title`; an avatar needs
 `fallback`; a shortcut needs a `key`; a select needs an `id` and an `onSelect` handler; a slider needs a `value`, `range` or
-`values` and then an `onChange` handler whose type follows from it. Variants, sizes, `rounded`, `startIcon` and
+`values` and then an `onChange` handler whose type follows from it; an input OTP needs a `value`, an `onChange` handler
+and at least one `group`. Variants, sizes, `rounded`, `startIcon` and
 `endIcon` are setters, and the renderer takes the attributes:
 
 ```elm
