@@ -419,6 +419,27 @@
       "docs": "Run `elm install elm/json` as well: the input OTP decodes its input events."
     },
     {
+      "name": "item",
+      "type": "registry:item",
+      "title": "Item",
+      "description": "A versatile component for displaying content with media, title, description, and actions.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/separator"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Item.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Item.elm"
+        }
+      ]
+    },
+    {
       "name": "kbd",
       "type": "registry:item",
       "title": "Kbd",
@@ -453,6 +474,30 @@
           "target": "~/src/UI/Label.elm"
         }
       ]
+    },
+    {
+      "name": "message-scroller",
+      "type": "registry:item",
+      "title": "Message Scroller",
+      "description": "A chat scroll container that anchors turns, opens saved transcripts, follows streamed responses, loads history without jumping, and jumps to any message.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/button"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/json",
+          "elm/browser"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/MessageScroller.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/MessageScroller.elm"
+        }
+      ],
+      "docs": "Run `elm install elm/json elm/browser` as well: the scroller decodes its scroll events and its commands are `Browser.Dom` tasks."
     },
     {
       "name": "native-select",

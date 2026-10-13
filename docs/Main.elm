@@ -201,7 +201,11 @@ update msg model =
             )
 
         StateChanged stateMsg ->
-            ( { model | state = State.update stateMsg model.state }, Cmd.none )
+            let
+                ( state, cmd ) =
+                    State.update stateMsg model.state
+            in
+            ( { model | state = state }, Cmd.map StateChanged cmd )
 
         Scrolled ->
             ( model, Cmd.none )
