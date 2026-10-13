@@ -33,7 +33,7 @@ A dialog is built with `new`, given an `id` and a `trigger`, filled in with part
             ]
         |> Dialog.toHtml []
 
-The dialog is a native `<dialog>` opened as a modal by its trigger through an invoker command, so it sits in the top layer over a dimmed backdrop, traps focus, makes the rest of the page inert, closes on Escape, a click on the backdrop or any button with the [`closes`](#closes) attributes, and gives focus back to the trigger, with no JavaScript, ports or component state. The `id` is required because the trigger and the dialog find each other by it.
+The dialog is a native `<dialog>` opened as a modal by its trigger through an invoker command, so it sits in the top layer over a dimmed backdrop, traps focus, makes the rest of the page inert, closes on Escape, a tap on the backdrop or any button with the [`closes`](#closes) attributes, and gives focus back to the trigger, with no JavaScript, ports or component state. The backdrop is itself a close button, so it works on phones and in Safari, which has neither an Escape key nor `closedby`. The `id` is required because the trigger and the dialog find each other by it.
 
 The open state lives in the browser. Give the dialog `onClose` to be told when it closes, for example to reset a form.
 
@@ -228,7 +228,7 @@ footer attrs children (Dialog config) =
 -- SETTERS
 
 
-{-| Removes the close button from the top-right corner. Give the footer a button with the [`closes`](#closes) attributes instead, or leave Escape as the only way out.
+{-| Removes the close button from the top-right corner. Escape and a tap on the backdrop still close the dialog; give the footer a button with the [`closes`](#closes) attributes for an explicit way out.
 -}
 hideCloseButton : Dialog id msg -> Dialog id msg
 hideCloseButton (Dialog config) =
@@ -246,7 +246,7 @@ onClose msg (Dialog config) =
 -- RENDERING
 
 
-{-| Renders the trigger, if any, followed by the `<dialog>` with the given attributes after the styles, so they can override them. Pass a width such as `class "sm:max-w-md"` to make it wider than the default `sm:max-w-sm`.
+{-| Renders the trigger, if any, followed by the `<dialog>`. The attributes go on the panel inside it, after the styles, so they can override them. Pass a width such as `class "sm:max-w-md"` to make it wider than the default `sm:max-w-sm`.
 -}
 toHtml : List (Attribute msg) -> Dialog Ready msg -> Html msg
 toHtml attrs (Dialog config) =
@@ -267,19 +267,17 @@ toHtml attrs (Dialog config) =
             , Just
                 (Html.node "dialog"
                     ([ Html.Attributes.id config.id
-                     , attribute "data-slot" "dialog-content"
 
-                     -- A click on the backdrop closes the dialog where supported.
+                     -- The dialog fills the viewport so that the whole dimmed area is a
+                     -- button closing it: Safari has no `closedby` and phones have no
+                     -- Escape key, so without it a dialog with no close button can't be
+                     -- left. `closedby` still lets browsers that have it close on
+                     -- Escape and a click outside natively.
                      , attribute "closedby" "any"
+                     , class "fixed inset-0 isolate z-50 m-0 hidden h-full max-h-none w-full max-w-none place-items-center overflow-hidden bg-transparent p-4 outline-none open:grid"
 
-                     -- The width from `sm` up comes from a variable so that a `sm:max-w-*`
-                     -- class passed to `toHtml` wins: Tailwind puts `max-w-(--…)` before
-                     -- every other `max-w-*`.
-                     , class "fixed inset-0 isolate z-50 m-auto hidden w-full max-w-[calc(100%-2rem)] gap-4 rounded-xl border-0 bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none open:grid sm:max-w-(--dialog-width) [--dialog-width:var(--container-sm)]"
-
-                     -- Fades and zooms in from `@starting-style`, and out while the
-                     -- `display` and `overlay` changes wait for the transition to end.
-                     , class "scale-95 opacity-0 transition-[opacity,scale,display,overlay] duration-100 ease-out transition-discrete open:scale-100 open:opacity-100 starting:open:scale-95 starting:open:opacity-0"
+                     -- The `display` and `overlay` changes wait for the panel's fade out.
+                     , class "transition-[display,overlay] duration-100 transition-discrete"
                      , class "backdrop:bg-black/10 backdrop:opacity-0 backdrop:backdrop-blur-xs backdrop:transition-opacity backdrop:duration-100 backdrop:ease-out open:backdrop:opacity-100 starting:open:backdrop:opacity-0"
                      ]
                         ++ (if List.isEmpty config.title then
@@ -301,57 +299,84 @@ toHtml attrs (Dialog config) =
                                 Nothing ->
                                     []
                            )
-                        ++ attrs
                     )
-                    (List.filterMap identity
-                        [ if hasHeader then
-                            Just
-                                (Html.div
-                                    [ attribute "data-slot" "dialog-header"
-                                    , class "flex flex-col gap-2"
-                                    ]
-                                    (List.filterMap identity
-                                        [ if List.isEmpty config.title then
-                                            Nothing
+                    [ Html.div
+                        ([ attribute "data-slot" "dialog-content"
 
-                                          else
-                                            Just
-                                                (Html.h2
-                                                    [ Html.Attributes.id titleId
-                                                    , attribute "data-slot" "dialog-title"
-                                                    , class "text-base leading-none font-medium"
-                                                    ]
-                                                    config.title
-                                                )
-                                        , if List.isEmpty config.description then
-                                            Nothing
+                         -- The width from `sm` up comes from a variable so that a `sm:max-w-*`
+                         -- class passed to `toHtml` wins: Tailwind puts `max-w-(--…)` before
+                         -- every other `max-w-*`.
+                         , class "relative grid w-full max-h-full gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-(--dialog-width) [--dialog-width:var(--container-sm)]"
 
-                                          else
-                                            Just
-                                                (Html.p
-                                                    [ Html.Attributes.id descriptionId
-                                                    , attribute "data-slot" "dialog-description"
-                                                    , class "text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground"
-                                                    ]
-                                                    config.description
-                                                )
+                         -- Fades and zooms in from `@starting-style`, and out while the
+                         -- dialog's `display` and `overlay` changes wait for the transition.
+                         , class "scale-95 opacity-0 transition-[opacity,scale] duration-100 ease-out in-[[open]]:scale-100 in-[[open]]:opacity-100 starting:in-[[open]]:scale-95 starting:in-[[open]]:opacity-0"
+                         ]
+                            ++ attrs
+                        )
+                        (List.filterMap identity
+                            [ if hasHeader then
+                                Just
+                                    (Html.div
+                                        [ attribute "data-slot" "dialog-header"
+                                        , class "flex flex-col gap-2"
                                         ]
-                                    )
-                                )
+                                        (List.filterMap identity
+                                            [ if List.isEmpty config.title then
+                                                Nothing
 
-                          else
-                            Nothing
-                        ]
-                        ++ config.content
-                        ++ List.filterMap identity
-                            [ Maybe.map viewFooter config.footer
-                            , if config.closeButton then
-                                Just (viewCloseButton config.id)
+                                              else
+                                                Just
+                                                    (Html.h2
+                                                        [ Html.Attributes.id titleId
+                                                        , attribute "data-slot" "dialog-title"
+                                                        , class "text-base leading-none font-medium"
+                                                        ]
+                                                        config.title
+                                                    )
+                                            , if List.isEmpty config.description then
+                                                Nothing
+
+                                              else
+                                                Just
+                                                    (Html.p
+                                                        [ Html.Attributes.id descriptionId
+                                                        , attribute "data-slot" "dialog-description"
+                                                        , class "text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground"
+                                                        ]
+                                                        config.description
+                                                    )
+                                            ]
+                                        )
+                                    )
 
                               else
                                 Nothing
                             ]
-                    )
+                            ++ config.content
+                            ++ List.filterMap identity
+                                [ Maybe.map viewFooter config.footer
+                                , if config.closeButton then
+                                    Just (viewCloseButton config.id)
+
+                                  else
+                                    Nothing
+                                ]
+                        )
+
+                    -- Behind the panel and after it in the tree, so that the dialog
+                    -- focuses the panel's first control on opening, not the backdrop.
+                    , Html.button
+                        ([ Html.Attributes.type_ "button"
+                         , attribute "data-slot" "dialog-backdrop"
+                         , attribute "aria-hidden" "true"
+                         , Html.Attributes.tabindex -1
+                         , class "absolute inset-0 -z-10 cursor-default"
+                         ]
+                            ++ closes config.id
+                        )
+                        []
+                    ]
                 )
             ]
         )
