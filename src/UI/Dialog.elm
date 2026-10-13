@@ -276,6 +276,10 @@ toHtml attrs (Dialog config) =
                      , attribute "closedby" "any"
                      , class "fixed inset-0 isolate z-50 m-0 hidden h-full max-h-none w-full max-w-none place-items-center overflow-hidden bg-transparent p-4 outline-none open:grid"
 
+                     -- The page behind stops scrolling while the dialog is modal, keeping
+                     -- its scrollbar gutter so that nothing shifts.
+                     , class "[html:has(&:modal)]:overflow-hidden [html:has(&:modal)]:[scrollbar-gutter:stable]"
+
                      -- The `display` and `overlay` changes wait for the panel's fade out.
                      , class "transition-[display,overlay] duration-100 transition-discrete"
                      , class "backdrop:bg-black/10 backdrop:opacity-0 backdrop:backdrop-blur-xs backdrop:transition-opacity backdrop:duration-100 backdrop:ease-out open:backdrop:opacity-100 starting:open:backdrop:opacity-0"
