@@ -263,7 +263,7 @@ radioItem checked attrs children =
         }
 
 
-{-| An item that opens another menu to its right, or to its left when it doesn't fit, with the given label and entries. A click, Enter or Space opens it, and Escape closes it alone. Picking an item in it closes every menu.
+{-| An item that opens another menu at its end, to its right in left-to-right text and to its left in right-to-left text, or on the opposite side when it doesn't fit, with the given label and entries. A click, Enter or Space opens it, and Escape closes it alone. Picking an item in it closes every menu.
 -}
 submenu : List (Html msg) -> List (Item msg) -> Item msg
 submenu children items =
@@ -638,7 +638,7 @@ viewItem rootId prefix first index entry =
                     , attribute "data-slot" "dropdown-menu-sub-content"
                     , attribute "data-side" "right"
                     , attribute "style" ("position-anchor: " ++ subAnchor ++ "; " ++ submenuPlacement ++ "; " ++ minHeight config.items)
-                    , class "min-w-24 shadow-lg"
+                    , class "min-w-24 shadow-lg [position-area:right_span-bottom] rtl:[position-area:left_span-bottom]"
                     , class (menuClass Right)
                     ]
                     (viewItems rootId subId config.items)
@@ -877,11 +877,11 @@ placement s a =
     "position-area: " ++ area ++ "; position-try-fallbacks: " ++ fallbacks ++ "; margin: " ++ margin
 
 
-{-| A submenu opens to the right of its trigger, flush with it, with its first item 3px above the trigger's top so the two line up, like shadcn's `alignOffset` of -3.
+{-| The fallbacks and margin of a submenu, which opens at the end of its trigger in the text direction (the `position-area` is a class, because it swaps in right-to-left text). It is flush with the trigger, with its first item 3px above the trigger's top so the two line up, like shadcn's `alignOffset` of -3.
 -}
 submenuPlacement : String
 submenuPlacement =
-    "position-area: right span-bottom; position-try-fallbacks: flip-inline, flip-block, flip-inline flip-block; margin: -3px 0 0 0"
+    "position-try-fallbacks: flip-inline, flip-block, flip-inline flip-block; margin: -3px 0 0 0"
 
 
 {-| Grows out of the trigger's side and slides 0.5rem towards it on the way in, like shadcn's `slide-in-from-*-2`.
