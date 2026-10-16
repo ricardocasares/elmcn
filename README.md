@@ -47,7 +47,7 @@ Button.new
 The `starter` item sets up a Vite + Tailwind CSS v4 app around the theme and the
 `button` component. It writes:
 
-- `index.html`, `vite.config.ts`, `elm.json`, `package.json` and `AGENTS.md` in the project root,
+- `index.html`, `vite.config.ts`, `elm.json`, `package.json`, `tsconfig.json` and `AGENTS.md` in the project root,
   and `src/main.ts` and `src/main.css`
 - `src/Main.elm`, a small app that saves the theme to `localStorage` and copies text to
   the clipboard

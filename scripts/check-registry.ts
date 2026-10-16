@@ -30,7 +30,7 @@ const PACKAGES: Record<string, string> = {
 };
 
 // Templates kept in src/ in this repo, because the root copies belong to the docs site, that install to the project root.
-const ROOT_FILES = new Set(["src/index.html", "src/vite.config.ts", "src/elm.json", "src/package.json", "src/.gitignore", "src/AGENTS.md"]);
+const ROOT_FILES = new Set(["src/index.html", "src/vite.config.ts", "src/elm.json", "src/package.json", "src/.gitignore", "src/AGENTS.md", "src/tsconfig.json"]);
 
 const registry: Registry = await Bun.file("registry.json").json();
 const items = new Map(registry.items.map((item) => [item.name, item]));

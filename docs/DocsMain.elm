@@ -408,7 +408,7 @@ viewHome model =
             , shellBlock model.copied "npx shadcn@latest add ricardocasares/elmcn/button ricardocasares/elmcn/card"
             ]
         , section "Starter"
-            [ prose [ text "To start a new app, add the starter. It sets up Vite and Tailwind CSS v4 with the theme and the button, and writes index.html, vite.config.ts, elm.json and package.json to the project root, main.ts and main.css to src, a Main.elm that saves the theme to localStorage and copies text to the clipboard, the typed interop modules with their TypeScript types, and a favicon:" ]
+            [ prose [ text "To start a new app, add the starter. It sets up Vite and Tailwind CSS v4 with the theme and the button, and writes index.html, vite.config.ts, elm.json, package.json and tsconfig.json to the project root, main.ts and main.css to src, a Main.elm that saves the theme to localStorage and copies text to the clipboard, the typed interop modules with their TypeScript types, and a favicon:" ]
             , shellBlock model.copied "npx shadcn@latest add ricardocasares/elmcn/starter --overwrite\nnpm install"
             , prose [ text "Then start Vite. It generates the TypeScript types first:" ]
             , shellBlock model.copied "npm run dev"

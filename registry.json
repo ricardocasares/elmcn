@@ -69,6 +69,11 @@
           "target": "~/.gitignore"
         },
         {
+          "path": "src/tsconfig.json",
+          "type": "registry:file",
+          "target": "~/tsconfig.json"
+        },
+        {
           "path": "src/AGENTS.md",
           "type": "registry:file",
           "target": "~/AGENTS.md"
