@@ -43,6 +43,7 @@ config =
     , NoSimpleLetBody.rule
     , NoPrematureLetComputation.rule
     , NoUnused.CustomTypeConstructorArgs.rule
+        |> Rule.ignoreErrorsForFiles [ "src/InteropDefinitions.elm" ]
     , NoUnused.Dependencies.rule
     , NoUnused.Parameters.rule
     , NoUnused.Patterns.rule

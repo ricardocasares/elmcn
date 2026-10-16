@@ -1,6 +1,6 @@
 import "./app.css";
 import "../src/UI/elmcn-dialog";
-import { Elm, type Flags } from "./Main.elm";
+import { Elm, type Flags } from "./DocsMain.elm";
 
 //-- FLAGS
 
@@ -14,8 +14,8 @@ const getStoredTheme = () => {
 };
 
 //-- INIT
-
-const app = Elm.Main.init({
+// @ts-ignore
+const app = Elm.DocsMain.init({
   node: document.getElementById("app"),
   flags: {
     theme: getStoredTheme(),

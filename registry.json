@@ -18,6 +18,79 @@
       ]
     },
     {
+      "name": "starter",
+      "type": "registry:item",
+      "title": "Starter",
+      "description": "A Vite + Tailwind CSS v4 starter for an Elm app: index.html, the Vite config and typed Elm/JavaScript interop definitions and ports, and a Main.elm that shows them.",
+      "docs": "Run `elm install dillonkearns/elm-ts-json` and `elm install elm/browser` as well: the interop modules and `Main.elm` use them, and `elm/json` for the ports. `src/Main.elm` is a small app that shows the theme and clipboard interop, started by `src/main.ts`. Run Vite with `vite --config src/vite.config.ts`. After changing the interop definitions, regenerate the types with `elm-ts-interop --output src/Main.elm.d.ts`.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/theme",
+        "ricardocasares/elmcn/button"
+      ],
+      "devDependencies": [
+        "vite",
+        "vite-plugin-elm",
+        "tailwindcss",
+        "@tailwindcss/vite",
+        "elm-ts-interop"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "dillonkearns/elm-ts-json",
+          "elm/browser",
+          "elm/html",
+          "elm/json"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/index.html",
+          "type": "registry:file",
+          "target": "~/index.html"
+        },
+        {
+          "path": "src/vite.config.ts",
+          "type": "registry:file",
+          "target": "~/vite.config.ts"
+        },
+        {
+          "path": "src/InteropDefinitions.elm",
+          "type": "registry:file",
+          "target": "~/src/InteropDefinitions.elm"
+        },
+        {
+          "path": "src/InteropPorts.elm",
+          "type": "registry:file",
+          "target": "~/src/InteropPorts.elm"
+        },
+        {
+          "path": "src/Main.elm",
+          "type": "registry:file",
+          "target": "~/src/Main.elm"
+        },
+        {
+          "path": "src/Main.elm.d.ts",
+          "type": "registry:file",
+          "target": "~/src/Main.elm.d.ts"
+        },
+        {
+          "path": "src/main.ts",
+          "type": "registry:file",
+          "target": "~/src/main.ts"
+        },
+        {
+          "path": "src/app.css",
+          "type": "registry:file",
+          "target": "~/src/app.css"
+        },
+        {
+          "path": "public/favicon.svg",
+          "type": "registry:file",
+          "target": "~/public/favicon.svg"
+        }
+      ]
+    },
+    {
       "name": "accordion",
       "type": "registry:item",
       "title": "Accordion",

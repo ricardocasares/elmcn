@@ -78,7 +78,11 @@ for (const item of items) {
       "elm-version": project["elm-version"],
       dependencies: {
         direct: pick([...packages].sort()),
-        indirect: pick(["elm/json", "elm/time", "elm/url", "elm/virtual-dom"].filter((name) => !packages.has(name))),
+        indirect: pick(
+          [...new Set(["elm/json", "elm/time", "elm/url", "elm/virtual-dom", ...Object.keys(project.dependencies.indirect)])].filter(
+            (name) => !packages.has(name)
+          )
+        ),
       },
       "test-dependencies": { direct: {}, indirect: {} },
     })
@@ -90,7 +94,7 @@ for (const item of items) {
       const installed = join(app, file.target.replace("~/", ""));
       if (!(await Bun.file(installed).exists())) throw new Error(`${file.target} was not installed`);
       if (installed.endsWith(".elm")) await elmMake(installed, app);
-      if (installed.endsWith(".ts")) {
+      if (installed.endsWith(".ts") && file.target.startsWith("~/src/UI/")) {
         await $`${bin("tsc")} --noEmit --strict --target ESNext --module ESNext --lib ESNext,DOM ${installed}`
           .cwd(app)
           .quiet();

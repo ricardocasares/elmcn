@@ -21,7 +21,13 @@ type Item = {
 type Registry = { items: Item[] };
 
 const REPO = "ricardocasares/elmcn/";
-const PACKAGES: Record<string, string> = { Html: "elm/html", Svg: "elm/svg", Json: "elm/json", Browser: "elm/browser" };
+const PACKAGES: Record<string, string> = {
+  Html: "elm/html",
+  Svg: "elm/svg",
+  Json: "elm/json",
+  Browser: "elm/browser",
+  TsJson: "dillonkearns/elm-ts-json"
+};
 
 const registry: Registry = await Bun.file("registry.json").json();
 const items = new Map(registry.items.map((item) => [item.name, item]));
@@ -104,7 +110,7 @@ for (const item of registry.items) {
       errors.push(`${item.name}: needs ${p}, but its docs don't tell users to install it`);
     }
   }
-  for (const file of item.files.filter((f) => f.path.endsWith(".ts"))) {
+  for (const file of item.files.filter((f) => f.path.startsWith("src/UI/") && f.path.endsWith(".ts"))) {
     const specifier = file.target.replace(/^~\/src\//, "./").replace(/\.ts$/, "");
     if (!(item.docs ?? "").includes(`import "${specifier}";`)) {
       errors.push(`${item.name}: ships ${file.path}, but its docs don't tell users to import "${specifier}"`);

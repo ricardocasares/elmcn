@@ -1,16 +1,16 @@
-module Main exposing (Model, Msg, Route, main)
+module DocsMain exposing (Model, Msg, Route, main)
 
 import Browser
 import Browser.Dom
 import Browser.Navigation as Nav
 import Component exposing (Component, Entry, Example)
+import DocsInteropDefinitions as Interop exposing (Theme)
+import DocsInteropPorts
 import Generated
 import Highlight
 import Html exposing (Html, a, aside, code, div, h1, h2, h3, header, li, main_, nav, p, pre, text, ul)
 import Html.Attributes exposing (attribute, class, href, id, selected, target, title, type_, value)
 import Html.Events exposing (onClick, onInput)
-import InteropDefinitions as Interop exposing (Theme)
-import InteropPorts
 import Json.Decode as Decode
 import Phosphor exposing (IconWeight(..))
 import Process
@@ -30,7 +30,7 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions = \_ -> Sub.map GotInterop InteropPorts.toElm
+        , subscriptions = \_ -> Sub.map GotInterop DocsInteropPorts.toElm
         , onUrlRequest = LinkClicked
         , onUrlChange = UrlChanged
         }
@@ -76,7 +76,7 @@ init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
         { theme, systemDark } =
-            InteropPorts.decodeFlags flags
+            DocsInteropPorts.decodeFlags flags
                 |> Result.withDefault { theme = Nothing, systemDark = False }
     in
     ( { key = key
@@ -156,7 +156,7 @@ update msg model =
 
         ThemeSelected theme ->
             ( { model | theme = theme }
-            , InteropPorts.fromElm
+            , DocsInteropPorts.fromElm
                 (Interop.WriteToLocalStorage
                     { key = "theme"
                     , value = Interop.themeToString theme
@@ -179,7 +179,7 @@ update msg model =
         CopyClicked source ->
             ( { model | copied = Just source }
             , Cmd.batch
-                [ InteropPorts.fromElm (Interop.CopyToClipboard source)
+                [ DocsInteropPorts.fromElm (Interop.CopyToClipboard source)
                 , Task.perform (\_ -> CopiedReset) (Process.sleep 1500)
                 ]
             )

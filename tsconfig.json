@@ -3,11 +3,11 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["bun"],
+    "types": ["bun", "vite/client"],
     "lib": ["ESNext", "DOM"],
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["scripts", "docs", "src", "vite.config.ts"]
+  "include": ["scripts", "src", "docs"]
 }
