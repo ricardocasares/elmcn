@@ -1,4 +1,3 @@
-import "./app.css";
 import "../src/UI/elmcn-dialog";
 import { Elm, type Flags } from "./DocsMain.elm";
 

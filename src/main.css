@@ -1,13 +1,14 @@
 /*
   elmcn theme — shadcn/ui "neutral" tokens for Tailwind CSS v4.
 
-  Import it right after Tailwind in your stylesheet:
+  This is the app's one stylesheet. Link it from index.html:
 
-    @import "tailwindcss";
-    @import "./elmcn.css";
+    <link rel="stylesheet" href="/src/main.css" />
 
   Toggle dark mode by adding the `dark` class to <html> (or any ancestor).
 */
+
+@import "tailwindcss";
 
 /* Scan the installed Elm components for class names. */
 @source "./UI";

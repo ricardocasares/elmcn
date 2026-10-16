@@ -87,7 +87,7 @@ In an `update` that looks like this:
 
 The opening position applies to a freshly rendered scroller. To open a different transcript, wrap the scroller in `Html.Keyed.node` and change the key.
 
-The scroller needs the utilities in `elmcn.css`: the scroll button states, the bottom fade and `scrollbar-thin`. Add the theme again if you installed it before the scroller.
+The scroller needs the utilities in `main.css`: the scroll button states, the bottom fade and `scrollbar-thin`. Add the theme again if you installed it before the scroller.
 
 Browsers: Chrome, Firefox and Safari do everything above. iOS Safari has no scroll anchoring, so it needs rule 2, and [`markPlace`](#markPlace) with [`restorePlace`](#restorePlace) when you load history. Firefox has no scroll-driven animations, so its buttons follow [`scrollable`](#scrollable), which you set from `onScroll`.
 

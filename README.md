@@ -23,17 +23,16 @@ Button.new
 
 ## Install
 
-1. Add the theme. It writes `src/elmcn.css`:
+1. Add the theme. It writes `src/main.css`, which already imports Tailwind:
 
    ```sh
    npx shadcn@latest add ricardocasares/elmcn/theme
    ```
 
-   Then import it after Tailwind in your main stylesheet:
+   Then link it from your `index.html`, instead of importing CSS from TypeScript:
 
-   ```css
-   @import "tailwindcss";
-   @import "./elmcn.css"; /* path relative to this file */
+   ```html
+   <link rel="stylesheet" href="/src/main.css" />
    ```
 
 2. Add components. Each one is written to `src/UI/<Name>.elm`, along with any
@@ -48,8 +47,8 @@ Button.new
 The `starter` item sets up a Vite + Tailwind CSS v4 app around the theme and the
 `button` component. It writes:
 
-- `index.html`, `vite.config.ts`, `elm.json` and `package.json` in the project root,
-  and `src/main.ts` and `src/app.css`
+- `index.html`, `vite.config.ts`, `elm.json`, `package.json` and `AGENTS.md` in the project root,
+  and `src/main.ts` and `src/main.css`
 - `src/Main.elm`, a small app that saves the theme to `localStorage` and copies text to
   the clipboard
 - `src/InteropDefinitions.elm` and `src/InteropPorts.elm`, the typed ports that

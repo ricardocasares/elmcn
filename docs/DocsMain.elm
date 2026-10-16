@@ -400,15 +400,15 @@ viewHome model =
                 ]
             ]
         , section "Installation"
-            [ prose [ text "Add the theme. It writes src/elmcn.css:" ]
+            [ prose [ text "Add the theme. It writes src/main.css, which already imports Tailwind:" ]
             , shellBlock model.copied "npx shadcn@latest add ricardocasares/elmcn/theme"
-            , prose [ text "Then import it after Tailwind in your main stylesheet:" ]
-            , shellBlock model.copied "@import \"tailwindcss\";\n@import \"./elmcn.css\"; /* path relative to this file */"
+            , prose [ text "Then link it from your index.html, instead of importing CSS from TypeScript:" ]
+            , shellBlock model.copied "<link rel=\"stylesheet\" href=\"/src/main.css\" />"
             , prose [ text "Add components. Each one is written to src/UI/<Name>.elm, along with any components it uses:" ]
             , shellBlock model.copied "npx shadcn@latest add ricardocasares/elmcn/button ricardocasares/elmcn/card"
             ]
         , section "Starter"
-            [ prose [ text "To start a new app, add the starter. It sets up Vite and Tailwind CSS v4 with the theme and the button, and writes index.html, vite.config.ts, elm.json and package.json to the project root, main.ts and app.css to src, a Main.elm that saves the theme to localStorage and copies text to the clipboard, the typed interop modules with their TypeScript types, and a favicon:" ]
+            [ prose [ text "To start a new app, add the starter. It sets up Vite and Tailwind CSS v4 with the theme and the button, and writes index.html, vite.config.ts, elm.json and package.json to the project root, main.ts and main.css to src, a Main.elm that saves the theme to localStorage and copies text to the clipboard, the typed interop modules with their TypeScript types, and a favicon:" ]
             , shellBlock model.copied "npx shadcn@latest add ricardocasares/elmcn/starter --overwrite\nnpm install"
             , prose [ text "Then start Vite. It generates the TypeScript types first:" ]
             , shellBlock model.copied "npm run dev"

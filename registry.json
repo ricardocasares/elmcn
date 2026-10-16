@@ -7,13 +7,13 @@
       "name": "theme",
       "type": "registry:item",
       "title": "Theme",
-      "description": "shadcn/ui neutral color tokens, radius and dark mode for Tailwind CSS v4. Import it after tailwindcss in your stylesheet.",
-      "docs": "Add `@import \"./elmcn.css\";` after `@import \"tailwindcss\";` in your main stylesheet.",
+      "description": "shadcn/ui neutral color tokens, radius and dark mode for Tailwind CSS v4. It includes the tailwindcss import: link it from index.html.",
+      "docs": "Link `src/main.css` from your `index.html` with `<link rel=\"stylesheet\" href=\"/src/main.css\" />`. It already imports Tailwind, so do not import it from TypeScript.",
       "files": [
         {
-          "path": "src/elmcn.css",
+          "path": "src/main.css",
           "type": "registry:file",
-          "target": "~/src/elmcn.css"
+          "target": "~/src/main.css"
         }
       ]
     },
@@ -69,6 +69,11 @@
           "target": "~/.gitignore"
         },
         {
+          "path": "src/AGENTS.md",
+          "type": "registry:file",
+          "target": "~/AGENTS.md"
+        },
+        {
           "path": "src/InteropDefinitions.elm",
           "type": "registry:file",
           "target": "~/src/InteropDefinitions.elm"
@@ -92,11 +97,6 @@
           "path": "src/main.ts",
           "type": "registry:file",
           "target": "~/src/main.ts"
-        },
-        {
-          "path": "src/app.css",
-          "type": "registry:file",
-          "target": "~/src/app.css"
         },
         {
           "path": "public/favicon.svg",

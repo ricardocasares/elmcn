@@ -1,4 +1,3 @@
-import "./app.css";
 import { Elm, type Flags } from "./Main.elm";
 
 //-- FLAGS

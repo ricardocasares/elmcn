@@ -1,5 +1,4 @@
-@import "tailwindcss";
-@import "../src/elmcn.css";
+@import "../src/main.css";
 
 @source "./";
 
