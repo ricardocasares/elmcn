@@ -65,7 +65,7 @@ npm run dev
 that is all there is to it (the CLI asks before replacing a `package.json` it has just
 started, so pass `--overwrite`). In an existing project, decline overwriting them and add
 the packages yourself: `elm install dillonkearns/elm-ts-json elm/browser elm/json`, and
-`vite`, `vite-plugin-elm`, `@tailwindcss/vite`, `tailwindcss` and `elm-ts-interop` from
+`vite`, `vite-plugin-elm`, `@tailwindcss/vite`, `tailwindcss`, `typescript` and `elm-ts-interop` from
 npm. `npm run dev` generates the TypeScript types and starts Vite.
 
 After changing `InteropDefinitions.elm`, regenerate the types (`npm run dev` and `npm run build` do it for you):

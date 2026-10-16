@@ -32,7 +32,8 @@
         "vite-plugin-elm",
         "tailwindcss",
         "@tailwindcss/vite",
-        "elm-ts-interop"
+        "elm-ts-interop",
+        "typescript"
       ],
       "meta": {
         "elmDependencies": [
