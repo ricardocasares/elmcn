@@ -23,7 +23,7 @@ const app = Elm.Main.init({
   },
 });
 
-//-- SEND TO ELM
+//-- PORTS:SEND
 
 media.addEventListener("change", (event) =>
   app.ports.interopToElm.send({
@@ -32,7 +32,7 @@ media.addEventListener("change", (event) =>
   }),
 );
 
-//-- RECEIVE FROM ELM
+//-- PORTS:SUBSCRIBE
 
 app.ports.interopFromElm.subscribe((fromElm) => {
   switch (fromElm.tag) {
