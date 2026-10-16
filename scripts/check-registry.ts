@@ -29,6 +29,9 @@ const PACKAGES: Record<string, string> = {
   TsJson: "dillonkearns/elm-ts-json"
 };
 
+// Templates kept in src/ in this repo, because the root copies belong to the docs site, that install to the project root.
+const ROOT_FILES = new Set(["src/index.html", "src/vite.config.ts", "src/elm.json", "src/package.json", "src/.gitignore"]);
+
 const registry: Registry = await Bun.file("registry.json").json();
 const items = new Map(registry.items.map((item) => [item.name, item]));
 const errors: string[] = [];
@@ -36,8 +39,9 @@ const errors: string[] = [];
 const moduleOwner = new Map<string, string>();
 for (const item of registry.items) {
   for (const file of item.files) {
-    if (file.target !== `~/${file.path}`) {
-      errors.push(`${item.name}: ${file.path} installs to ${file.target}, expected ~/${file.path}`);
+    const expected = ROOT_FILES.has(file.path) ? `~/${file.path.replace(/^src\//, "")}` : `~/${file.path}`;
+    if (file.target !== expected) {
+      errors.push(`${item.name}: ${file.path} installs to ${file.target}, expected ${expected}`);
     }
     const match = file.path.match(/^src\/(UI\/.+)\.elm$/);
     if (match) {

@@ -21,8 +21,8 @@
       "name": "starter",
       "type": "registry:item",
       "title": "Starter",
-      "description": "A Vite + Tailwind CSS v4 starter for an Elm app: index.html, the Vite config and typed Elm/JavaScript interop definitions and ports, and a Main.elm that shows them.",
-      "docs": "Run `elm install dillonkearns/elm-ts-json` and `elm install elm/browser` as well: the interop modules and `Main.elm` use them, and `elm/json` for the ports. `src/Main.elm` is a small app that shows the theme and clipboard interop, started by `src/main.ts`. Run Vite with `vite --config src/vite.config.ts`. After changing the interop definitions, regenerate the types with `elm-ts-interop --output src/Main.elm.d.ts`.",
+      "description": "A Vite + Tailwind CSS v4 starter for an Elm app: index.html, the Vite config, elm.json, package.json and typed Elm/JavaScript interop definitions and ports, and a Main.elm that shows them.",
+      "docs": "In a new project, the installed `elm.json` and `package.json` already list everything it needs: run `npm install`. In an existing project, run `elm install dillonkearns/elm-ts-json`, `elm install elm/browser` and `elm install elm/json` as well: the interop modules, `Main.elm` and the ports use them. `src/Main.elm` is a small app that shows the theme and clipboard interop, started by `src/main.ts`. `index.html`, `vite.config.ts`, `elm.json` and `package.json` are installed to the project root: run Vite with `vite`. After changing the interop definitions, regenerate the types with `elm-ts-interop --output src/Main.elm.d.ts`.",
       "registryDependencies": [
         "ricardocasares/elmcn/theme",
         "ricardocasares/elmcn/button"
@@ -52,6 +52,21 @@
           "path": "src/vite.config.ts",
           "type": "registry:file",
           "target": "~/vite.config.ts"
+        },
+        {
+          "path": "src/elm.json",
+          "type": "registry:file",
+          "target": "~/elm.json"
+        },
+        {
+          "path": "src/package.json",
+          "type": "registry:file",
+          "target": "~/package.json"
+        },
+        {
+          "path": "src/.gitignore",
+          "type": "registry:file",
+          "target": "~/.gitignore"
         },
         {
           "path": "src/InteropDefinitions.elm",

@@ -43,6 +43,38 @@ Button.new
    npx shadcn@latest add ricardocasares/elmcn/button ricardocasares/elmcn/card
    ```
 
+### Starting a new app
+
+The `starter` item sets up a Vite + Tailwind CSS v4 app around the theme and the
+`button` component. It writes:
+
+- `index.html`, `vite.config.ts`, `elm.json` and `package.json` in the project root,
+  and `src/main.ts` and `src/app.css`
+- `src/Main.elm`, a small app that saves the theme to `localStorage` and copies text to
+  the clipboard
+- `src/InteropDefinitions.elm` and `src/InteropPorts.elm`, the typed ports that
+  `Main.elm` uses, and `src/Main.elm.d.ts`, their TypeScript types
+- `public/favicon.svg`
+
+```sh
+npx shadcn@latest add ricardocasares/elmcn/starter --overwrite
+npm install
+npm run dev
+```
+
+`elm.json` and `package.json` list everything the starter needs, so in a new project
+that is all there is to it (the CLI asks before replacing a `package.json` it has just
+started, so pass `--overwrite`). In an existing project, decline overwriting them and add
+the packages yourself: `elm install dillonkearns/elm-ts-json elm/browser elm/json`, and
+`vite`, `vite-plugin-elm`, `@tailwindcss/vite`, `tailwindcss` and `elm-ts-interop` from
+npm. `npm run dev` generates the TypeScript types and starts Vite.
+
+After changing `InteropDefinitions.elm`, regenerate the types (`npm run dev` and `npm run build` do it for you):
+
+```sh
+npx elm-ts-interop --output src/Main.elm.d.ts
+```
+
 To pin a version, add a tag: `ricardocasares/elmcn/button#v0.1.0`. Pins apply only to
 the item you name, not to the items it depends on.
 
