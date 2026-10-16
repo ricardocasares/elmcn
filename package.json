@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "bun run types && vite",
-    "build": "bun run docs:gen && bun run types && vite build && cp dist/index.html dist/404.html",
+    "build": "bun run docs:gen && bun run types && vite build --base /elmcn/ && cp dist/index.html dist/404.html",
     "preview": "vite preview",
     "types": "elm-ts-interop --output docs/Main.elm.d.ts",
     "docs:gen": "bun scripts/gen-docs.ts",
