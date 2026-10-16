@@ -21,11 +21,11 @@ export interface ElmApp {
   };
 }
 
-export type FromElm = { data : string; tag : "copyToClipboard" } | { data : "system" | "dark" | "light"; tag : "saveTheme" };
+export type FromElm = { data : { key : string; value : string }; tag : "WriteToLocalStorage" } | { data : string; tag : "ReadFromLocalStorage" } | { data : string; tag : "CopyToClipboard" };
 
-export type ToElm = { dark : boolean; tag : "systemThemeChanged" };
+export type ToElm = { dark : boolean; tag : "SystemThemeChanged" } | { key : string; message : string; tag : "LocalStorageError" } | { message : string; tag : "ClipboardError" };
 
-export type Flags = { base : string; systemDark : boolean; theme : ("light" | "dark" | "system") | null };
+export type Flags = { systemDark : boolean; theme : ("light" | "dark" | "system") | null };
 
 export namespace Main {
   function init(options: { node?: HTMLElement | null; flags: Flags }): ElmApp;

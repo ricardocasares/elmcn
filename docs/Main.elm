@@ -42,33 +42,15 @@ main =
 
 type alias Model =
     { key : Nav.Key
-    , base : String
     , route : Route
     , theme : Theme
     , systemDark : Bool
     , copied : Maybe String
+    , storageError : Maybe String
+    , clipboardError : Maybe String
     , codeShown : Set String
     , state : State
     }
-
-
-{-| Always starts and ends with a slash.
--}
-normalizeBase : String -> String
-normalizeBase base =
-    let
-        withStart =
-            if String.startsWith "/" base then
-                base
-
-            else
-                "/" ++ base
-    in
-    if String.endsWith "/" withStart then
-        withStart
-
-    else
-        withStart ++ "/"
 
 
 isDark : Model -> Bool
@@ -93,16 +75,17 @@ type Route
 init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
-        { base, theme, systemDark } =
+        { theme, systemDark } =
             InteropPorts.decodeFlags flags
-                |> Result.withDefault { base = "/", theme = Nothing, systemDark = False }
+                |> Result.withDefault { theme = Nothing, systemDark = False }
     in
     ( { key = key
-      , base = normalizeBase base
-      , route = routeFromUrl (normalizeBase base) url
+      , route = routeFromUrl url
       , theme = Maybe.withDefault Interop.System theme
       , systemDark = systemDark
       , copied = Nothing
+      , storageError = Nothing
+      , clipboardError = Nothing
       , codeShown = Set.empty
       , state = State.init
       }
@@ -110,28 +93,31 @@ init flags url key =
     )
 
 
-{-| GitHub Pages serves 404.html, a copy of index.html, for paths it has no file for, so deep links reach this too.
+{-| The site is served from `<base href>`, so the route comes from the last path segment: a component slug, or the
+introduction when the path ends in a slash. GitHub Pages serves 404.html, a copy of index.html, for paths it has no file
+for, so deep links reach this too.
 -}
-routeFromUrl : String -> Url -> Route
-routeFromUrl base url =
+routeFromUrl : Url -> Route
+routeFromUrl url =
     let
         slug =
             url.path
-                |> String.dropLeft (String.length base)
                 |> String.split "/"
+                |> List.filter (not << String.isEmpty)
+                |> List.reverse
                 |> List.head
                 |> Maybe.withDefault ""
     in
-    case slug of
-        "" ->
-            Home
+    case List.filter (\c -> c.slug == slug) Generated.components of
+        component :: _ ->
+            ComponentPage component
 
-        _ ->
-            Generated.components
-                |> List.filter (\c -> c.slug == slug)
-                |> List.head
-                |> Maybe.map ComponentPage
-                |> Maybe.withDefault NotFound
+        [] ->
+            if String.endsWith "/" url.path then
+                Home
+
+            else
+                NotFound
 
 
 
@@ -161,18 +147,31 @@ update msg model =
             ( model, Nav.load url )
 
         UrlChanged url ->
-            ( { model | route = routeFromUrl model.base url }
+            ( { model | route = routeFromUrl url }
             , Task.perform (\_ -> Scrolled) (Browser.Dom.setViewport 0 0)
             )
 
         PageSelected slug ->
-            ( model, Nav.pushUrl model.key (model.base ++ slug) )
+            ( model, Nav.pushUrl model.key slug )
 
         ThemeSelected theme ->
-            ( { model | theme = theme }, InteropPorts.fromElm (Interop.SaveTheme theme) )
+            ( { model | theme = theme }
+            , InteropPorts.fromElm
+                (Interop.WriteToLocalStorage
+                    { key = "theme"
+                    , value = Interop.themeToString theme
+                    }
+                )
+            )
 
         GotInterop (Ok (Interop.SystemThemeChanged systemDark)) ->
             ( { model | systemDark = systemDark }, Cmd.none )
+
+        GotInterop (Ok (Interop.LocalStorageError error)) ->
+            ( { model | storageError = Just (error.key ++ ": " ++ error.message) }, Cmd.none )
+
+        GotInterop (Ok (Interop.ClipboardError message)) ->
+            ( { model | copied = Nothing, clipboardError = Just message }, Cmd.none )
 
         GotInterop (Err _) ->
             ( model, Cmd.none )
@@ -237,7 +236,7 @@ view model =
             [ div [ class "min-h-screen bg-background text-foreground" ]
                 [ viewHeader model
                 , div [ class "mx-auto flex max-w-6xl gap-10 px-6" ]
-                    [ viewSidebar model.base model.route
+                    [ viewSidebar model.route
                     , main_ [ class "min-w-0 max-w-3xl flex-1 py-10" ]
                         [ viewMobileNav model.route
                         , case model.route of
@@ -248,7 +247,7 @@ view model =
                                 viewComponent model component
 
                             NotFound ->
-                                viewNotFound model.base
+                                viewNotFound
                         ]
                     ]
                 ]
@@ -261,7 +260,7 @@ viewHeader : Model -> Html Msg
 viewHeader model =
     header [ class "sticky top-0 z-10 border-b bg-background/95 backdrop-blur" ]
         [ div [ class "mx-auto flex h-14 max-w-6xl items-center justify-between px-6" ]
-            [ a [ href model.base, class "text-lg font-semibold tracking-tight" ] [ text "elmcn" ]
+            [ a [ href "./", class "text-lg font-semibold tracking-tight" ] [ text "elmcn" ]
             , div [ class "flex items-center gap-2" ]
                 [ Button.new
                     |> Button.icon (Phosphor.githubLogo Regular |> Phosphor.toHtml [])
@@ -308,19 +307,19 @@ viewThemeSwitcher current =
         ]
 
 
-viewSidebar : String -> Route -> Html Msg
-viewSidebar base route =
+viewSidebar : Route -> Html Msg
+viewSidebar route =
     aside [ class "sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 overflow-y-auto py-10 md:block" ]
         [ nav [ class "flex flex-col gap-6" ]
             [ div [ class "flex flex-col gap-1" ]
                 [ sidebarHeading "Getting started"
-                , sidebarLink (route == Home) base "Introduction"
+                , sidebarLink (route == Home) "./" "Introduction"
                 ]
             , div [ class "flex flex-col gap-1" ]
                 (sidebarHeading "Components"
                     :: List.map
                         (\c ->
-                            sidebarLink (isCurrent route c) (base ++ c.slug) c.title
+                            sidebarLink (isCurrent route c) c.slug c.title
                         )
                         Generated.components
                 )
@@ -415,14 +414,14 @@ viewHome model =
             ]
         , section "Components"
             [ div [ class "grid gap-4 sm:grid-cols-2" ]
-                (List.map (componentCard model.base) Generated.components)
+                (List.map componentCard Generated.components)
             ]
         ]
 
 
-componentCard : String -> Component -> Html msg
-componentCard base component =
-    a [ href (base ++ component.slug), class "block" ]
+componentCard : Component -> Html msg
+componentCard component =
+    a [ href component.slug, class "block" ]
         [ Card.new
             |> Card.title [ text component.title ]
             |> Card.description [ text component.description ]
@@ -430,14 +429,14 @@ componentCard base component =
         ]
 
 
-viewNotFound : String -> Html msg
-viewNotFound base =
+viewNotFound : Html msg
+viewNotFound =
     div [ class "flex flex-col gap-4" ]
         [ pageHeader "Not found" "There is no page here."
         , Button.new
             |> Button.text "Back to the introduction"
             |> Button.outline
-            |> Button.toAnchor [ href base ]
+            |> Button.toAnchor [ href "./" ]
         ]
 
 

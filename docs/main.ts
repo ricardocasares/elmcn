@@ -1,52 +1,69 @@
 import "./app.css";
 import "../src/UI/elmcn-dialog";
-import { Elm } from "./Main.elm";
+import { Elm, type Flags } from "./Main.elm";
+
+//-- FLAGS
 
 const media = window.matchMedia("(prefers-color-scheme: dark)");
-let theme: "light" | "dark" | "system" | null = null;
-try {
-  const stored = localStorage.getItem("theme");
-  if (stored === "light" || stored === "dark" || stored === "system") {
-    theme = stored;
+const getStoredTheme = () => {
+  try {
+    return (localStorage.getItem("theme") as Flags["theme"]) ?? null;
+  } catch {
+    return null;
   }
-} catch (_) {}
-
-// The `dark` class goes on <html> as well as on Elm's root, so <body> has the
-// right background, and the theme color follows it: browsers tint their bars
-// from these. The colors are `--background` in src/elmcn.css.
-const applyTheme = () => {
-  const dark = theme === "dark" || (theme !== "light" && media.matches);
-  document.documentElement.classList.toggle("dark", dark);
-  document
-    .querySelector('meta[name="theme-color"]')!
-    .setAttribute("content", dark ? "#0a0a0a" : "#ffffff");
 };
-applyTheme();
+
+//-- INIT
 
 const app = Elm.Main.init({
   node: document.getElementById("app"),
-  flags: { base: import.meta.env.BASE_URL, theme, systemDark: media.matches },
+  flags: {
+    theme: getStoredTheme(),
+    systemDark: media.matches,
+  },
 });
+
+//-- SEND TO ELM
+
+media.addEventListener("change", (event) =>
+  app.ports.interopToElm.send({
+    tag: "SystemThemeChanged",
+    dark: event.matches,
+  }),
+);
+
+//-- RECEIVE FROM ELM
 
 app.ports.interopFromElm.subscribe((fromElm) => {
   switch (fromElm.tag) {
-    case "saveTheme":
-      theme = fromElm.data;
-      applyTheme();
-      try {
-        localStorage.setItem("theme", theme);
-      } catch (_) {}
-      break;
-    case "copyToClipboard":
-      navigator.clipboard.writeText(fromElm.data).catch(() => {});
-      break;
-  }
-});
+    case "CopyToClipboard":
+      return navigator.clipboard.writeText(fromElm.data).catch((error) =>
+        app.ports.interopToElm.send({
+          tag: "ClipboardError",
+          message: String(error),
+        }),
+      );
 
-media.addEventListener("change", (event) => {
-  applyTheme();
-  app.ports.interopToElm.send({
-    tag: "systemThemeChanged",
-    dark: event.matches,
-  });
+    case "ReadFromLocalStorage":
+      try {
+        return localStorage.getItem(fromElm.data);
+      } catch (error) {
+        return app.ports.interopToElm.send({
+          tag: "LocalStorageError",
+          key: fromElm.data,
+          message: String(error),
+        });
+      }
+
+    case "WriteToLocalStorage":
+      try {
+        return localStorage.setItem(fromElm.data.key, fromElm.data.value);
+      } catch (error) {
+        return app.ports.interopToElm.send({
+          tag: "LocalStorageError",
+          key: fromElm.data.key,
+          message: String(error),
+        });
+      }
+  }
 });

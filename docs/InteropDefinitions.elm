@@ -1,6 +1,5 @@
 module InteropDefinitions exposing (Flags, FromElm(..), Theme(..), ToElm(..), interop, themeToString)
 
-import Json.Encode
 import TsJson.Decode as TsDecode exposing (Decoder)
 import TsJson.Encode as TsEncode exposing (Encoder)
 
@@ -24,20 +23,21 @@ type Theme
 
 
 type FromElm
-    = SaveTheme Theme
-    | CopyToClipboard String
+    = CopyToClipboard String
+    | ReadFromLocalStorage String
+    | WriteToLocalStorage { key : String, value : String }
 
 
 type ToElm
     = SystemThemeChanged Bool
+    | LocalStorageError { key : String, message : String }
+    | ClipboardError String
 
 
-{-| `base` is the path the site is served from, "/elmcn/" on GitHub Pages. `theme` is what the user last chose, if
-anything.
+{-| `theme` is what the user last chose, if anything.
 -}
 type alias Flags =
-    { base : String
-    , theme : Maybe Theme
+    { theme : Maybe Theme
     , systemDark : Bool
     }
 
@@ -55,46 +55,42 @@ themeToString theme =
             "system"
 
 
-themeEncoder : Encoder Theme
-themeEncoder =
-    TsEncode.union
-        (\light dark system theme ->
-            case theme of
-                Light ->
-                    light
-
-                Dark ->
-                    dark
-
-                System ->
-                    system
-        )
-        |> TsEncode.variantLiteral (Json.Encode.string "light")
-        |> TsEncode.variantLiteral (Json.Encode.string "dark")
-        |> TsEncode.variantLiteral (Json.Encode.string "system")
-        |> TsEncode.buildUnion
-
-
 fromElm : Encoder FromElm
 fromElm =
     TsEncode.union
-        (\saveTheme copyToClipboard value ->
+        (\copyToClipboard readFromLocalStorage writeToLocalStorage value ->
             case value of
-                SaveTheme theme ->
-                    saveTheme theme
-
                 CopyToClipboard text ->
                     copyToClipboard text
+
+                ReadFromLocalStorage key ->
+                    readFromLocalStorage key
+
+                WriteToLocalStorage entry ->
+                    writeToLocalStorage entry
         )
-        |> TsEncode.variantTagged "saveTheme" themeEncoder
-        |> TsEncode.variantTagged "copyToClipboard" TsEncode.string
+        |> TsEncode.variantTagged "CopyToClipboard" TsEncode.string
+        |> TsEncode.variantTagged "ReadFromLocalStorage" TsEncode.string
+        |> TsEncode.variantTagged "WriteToLocalStorage"
+            (TsEncode.object
+                [ TsEncode.required "key" .key TsEncode.string
+                , TsEncode.required "value" .value TsEncode.string
+                ]
+            )
         |> TsEncode.buildUnion
 
 
 toElm : Decoder ToElm
 toElm =
     TsDecode.discriminatedUnion "tag"
-        [ ( "systemThemeChanged", TsDecode.map SystemThemeChanged (TsDecode.field "dark" TsDecode.bool) ) ]
+        [ ( "SystemThemeChanged", TsDecode.map SystemThemeChanged (TsDecode.field "dark" TsDecode.bool) )
+        , ( "LocalStorageError"
+          , TsDecode.map2 (\key message -> LocalStorageError { key = key, message = message })
+                (TsDecode.field "key" TsDecode.string)
+                (TsDecode.field "message" TsDecode.string)
+          )
+        , ( "ClipboardError", TsDecode.map ClipboardError (TsDecode.field "message" TsDecode.string) )
+        ]
 
 
 themeDecoder : Decoder Theme
@@ -104,7 +100,6 @@ themeDecoder =
 
 flags : Decoder Flags
 flags =
-    TsDecode.map3 Flags
-        (TsDecode.field "base" TsDecode.string)
+    TsDecode.map2 Flags
         (TsDecode.field "theme" (TsDecode.nullable themeDecoder))
         (TsDecode.field "systemDark" TsDecode.bool)
