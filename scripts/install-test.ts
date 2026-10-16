@@ -89,7 +89,7 @@ for (const item of items) {
   );
 
   try {
-    await $`${bin("shadcn")} add ${join(output, `${item.name}.json`)} --yes --silent --cwd ${app}`.cwd(app).quiet();
+    await $`${bin("shadcn")} add ${join(output, `${item.name}.json`)} --yes --overwrite --silent --cwd ${app}`.cwd(app).quiet();
     for (const file of item.files) {
       const installed = join(app, file.target.replace("~/", ""));
       if (!(await Bun.file(installed).exists())) throw new Error(`${file.target} was not installed`);
