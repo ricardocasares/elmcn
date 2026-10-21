@@ -141,7 +141,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         LinkClicked (Browser.Internal url) ->
-            ( model, Nav.pushUrl model.key (Url.toString url) )
+            if url.fragment == Just "" then
+                -- Example href="#" links resolve against <base href>, not the current page.
+                ( model, Cmd.none )
+
+            else
+                ( model, Nav.pushUrl model.key (Url.toString url) )
 
         LinkClicked (Browser.External url) ->
             ( model, Nav.load url )
