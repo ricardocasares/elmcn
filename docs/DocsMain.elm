@@ -258,7 +258,7 @@ view model =
 
 viewHeader : Model -> Html Msg
 viewHeader model =
-    header [ class "sticky top-0 z-10 border-b bg-background/95 backdrop-blur" ]
+    header [ class "sticky top-0 z-20 border-b bg-background/95 backdrop-blur" ]
         [ div [ class "mx-auto flex h-14 max-w-6xl items-center justify-between px-6" ]
             [ a [ href "./", class "text-lg font-semibold tracking-tight" ] [ text "elmcn" ]
             , div [ class "flex items-center gap-2" ]
@@ -596,7 +596,12 @@ exampleBox model component example =
             codeBlock model.copied "rounded-none border-0" example.code (Highlight.elm example.code)
 
           else
-            div [ class "flex min-h-40 items-center justify-center overflow-x-auto p-6" ]
+            div
+                [ class "flex min-h-40 items-center justify-center overflow-x-auto p-6"
+
+                -- A full-page layout, such as a sidebar, fills a fixed-height box instead.
+                , class "has-[[data-slot=sidebar-wrapper]]:h-[32rem] has-[[data-slot=sidebar-wrapper]]:items-stretch has-[[data-slot=sidebar-wrapper]]:overflow-hidden has-[[data-slot=sidebar-wrapper]]:p-0 [&_[data-slot=sidebar-wrapper]]:h-full [&_[data-slot=sidebar-wrapper]]:min-h-0"
+                ]
                 [ Html.map StateChanged (example.view model.state) ]
         ]
 

@@ -68,7 +68,7 @@ const dedent = (lines: string[], n: number): string => lines.map((l) => l.slice(
 
 const sentenceCase = (name: string): string => {
   if (ACRONYMS[name]) return ACRONYMS[name];
-  const words = name.replace(/([A-Z])/g, " $1").toLowerCase().trim();
+  const words = name.replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").toLowerCase().trim();
   return words[0].toUpperCase() + words.slice(1);
 };
 
@@ -90,23 +90,37 @@ const importsFor = (imports: Import[], body: string): string[] =>
     ];
   });
 
-const parseExamples = (source: string): Example[] => {
+// An example whose body is just `Alias.view` is a block: a whole module of its own
+// under docs/Examples/<Component>/, shown with that module's full source as the code.
+const blockSource = async (imports: Import[], body: string): Promise<string | null> => {
+  const m = body.trim().match(/^(\w+)\.view$/);
+  if (!m) return null;
+  const imported = imports.find((i) => (i.alias ?? i.module) === m[1]);
+  if (!imported) return null;
+  const file = Bun.file(`docs/${imported.module.replaceAll(".", "/")}.elm`);
+  return (await file.exists()) ? (await file.text()).trim() : null;
+};
+
+const parseExamples = async (source: string): Promise<Example[]> => {
   const imports = parseImports(source);
   const pattern = new RegExp(
     `${DOC}^([a-z]\\w*) : (Html msg|State -> Html State\\.Msg)\\n\\2(?: \\w+)? =\\n((?:(?: {4}[^\\n]*)?\\n)+)`,
     "gm"
   );
-  return [...source.matchAll(pattern)].map((m) => {
-    const lines = m[4].replace(/\n+$/, "").split("\n");
-    const body = dedent(lines, 4);
-    return {
-      id: m[2],
-      stateful: m[3] !== "Html msg",
-      title: sentenceCase(m[2]),
-      description: firstParagraph(m[1]),
-      code: [...importsFor(imports, body), "", body].join("\n"),
-    };
-  });
+  return Promise.all(
+    [...source.matchAll(pattern)].map(async (m) => {
+      const lines = m[4].replace(/\n+$/, "").split("\n");
+      const body = dedent(lines, 4);
+      const block = await blockSource(imports, body);
+      return {
+        id: m[2],
+        stateful: m[3] !== "Html msg",
+        title: sentenceCase(m[2]),
+        description: firstParagraph(m[1]),
+        code: block ?? [...importsFor(imports, body), "", body].join("\n"),
+      };
+    })
+  );
 };
 
 // ---- API --------------------------------------------------------------------------
@@ -152,7 +166,7 @@ const component = async (item: Item): Promise<Component | null> => {
     errors.push(`${item.name}: missing ${examplesFile.name}`);
     return null;
   }
-  const examples = parseExamples(await examplesFile.text());
+  const examples = await parseExamples(await examplesFile.text());
   if (!examples.some((e) => e.id === "demo")) errors.push(`${examplesFile.name}: no \`demo : Html msg\``);
   return {
     slug: item.name,

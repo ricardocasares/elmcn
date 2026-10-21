@@ -743,6 +743,35 @@
       "docs": "Run `elm install elm/json` as well: the slider decodes its input events."
     },
     {
+      "name": "sidebar",
+      "type": "registry:item",
+      "title": "Sidebar",
+      "description": "A composable, themeable and customizable sidebar component.",
+      "docs": "Run `elm install elm/json` as well: the sidebar decodes its events. Then add `import \"./UI/elmcn-dialog\";` to your JavaScript entry point: it defines the `<elmcn-dialog>` element that opens and closes the sidebar's sheet on small screens.",
+      "registryDependencies": [
+        "ricardocasares/elmcn/button",
+        "ricardocasares/elmcn/skeleton"
+      ],
+      "meta": {
+        "elmDependencies": [
+          "elm/html",
+          "elm/json"
+        ]
+      },
+      "files": [
+        {
+          "path": "src/UI/Sidebar.elm",
+          "type": "registry:file",
+          "target": "~/src/UI/Sidebar.elm"
+        },
+        {
+          "path": "src/UI/elmcn-dialog.ts",
+          "type": "registry:file",
+          "target": "~/src/UI/elmcn-dialog.ts"
+        }
+      ]
+    },
+    {
       "name": "skeleton",
       "type": "registry:item",
       "title": "Skeleton",

@@ -112,6 +112,7 @@ the item you name, not to the items it depends on.
 | `radio-group` | `UI.RadioGroup` |
 | `select` | `UI.Select` |
 | `separator` | `UI.Separator` |
+| `sidebar` | `UI.Sidebar` |
 | `skeleton` | `UI.Skeleton` |
 | `slider` | `UI.Slider` |
 | `spinner` | `UI.Spinner` |
