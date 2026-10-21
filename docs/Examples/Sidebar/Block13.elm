@@ -64,8 +64,8 @@ settingsDialog state =
         , Dialog.new
             |> Dialog.id "block13-settings"
             |> Dialog.open isOpen (State.set "block13-open" "false")
-            |> Dialog.title [ span [ class "sr-only" ] [ text "Settings" ] ]
-            |> Dialog.description [ span [ class "sr-only" ] [ text "Customize your settings here." ] ]
+            |> Dialog.title [ text "Settings" ]
+            |> Dialog.description [ text "Customize your settings here." ]
             |> Dialog.content
                 [ Sidebar.new
                     |> Sidebar.state (sidebarState "block13" state) (setSidebarState "block13")
@@ -122,7 +122,7 @@ settingsDialog state =
                 ]
             -- `gap-0`: the title and description are visually hidden, so their header
             -- row must not open a gap above the sidebar.
-            |> Dialog.toHtml [ class "gap-0 overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]" ]
+            |> Dialog.toHtml [ class "gap-0! overflow-hidden p-0! md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px] [&>[data-slot=dialog-header]]:sr-only" ]
         ]
 
 
