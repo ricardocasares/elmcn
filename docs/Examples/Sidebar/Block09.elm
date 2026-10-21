@@ -71,7 +71,7 @@ iconSidebar state =
         |> Sidebar.header
             [ Sidebar.menu []
                 [ Sidebar.menuItem []
-                    [ Sidebar.menuLink [ href "#", Sidebar.large, class "md:h-8 md:p-0" ]
+                    [ Sidebar.menuLink [ href "#", Sidebar.large, class "md:data-[size=lg]:h-8 md:p-0" ]
                         [ div [ class "flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground" ]
                             [ Phosphor.command Regular
                                 |> Phosphor.withClass "size-4"
@@ -145,7 +145,7 @@ navUser =
         [ Sidebar.menuItem []
             [ DropdownMenu.new
                 |> DropdownMenu.id "block09-nav-user"
-                |> DropdownMenu.trigger (Sidebar.menuButtonAttributes ++ [ Sidebar.large, class "md:h-8 md:p-0" ])
+                |> DropdownMenu.trigger (Sidebar.menuButtonAttributes ++ [ Sidebar.large, class "md:data-[size=lg]:h-8 md:p-0" ])
                     [ avatar
                     , details
                     , Phosphor.caretUpDown Regular
